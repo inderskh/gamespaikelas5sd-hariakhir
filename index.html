@@ -50,7 +50,6 @@
   /* --- RESPONSIVE MOBILE, FULLSCREEN & PHONE FRIENDLY --- */
   #mobile-portrait-hint { display: none; }
 
-  /* PERBAIKAN 2: Tampilan Lobby/Menu Awal Fleksibel di Semua Ukuran Layar */
   #start-menu {
     overflow-y: auto !important;
     padding: 0.75rem !important;
@@ -77,7 +76,7 @@
     .relative { width: 100%; max-width: min(100vw - 1rem, calc((100vh - 55px) * 16 / 9)); margin: 0 auto; }
     #game { max-height: calc(100vh - 55px); object-fit: contain; }
 
-    /* PERBAIKAN 1: Controller Dinaikkan & Digeser ke Tengah (Jempol Friendly) */
+    /* Controller Level 1 & 2 */
     #pad {
       position: fixed !important;
       bottom: 22px !important;
@@ -102,42 +101,41 @@
     .pad-btn { width: 3.6rem !important; height: 3.6rem !important; font-size: 1.25rem !important; }
     .pad-btn[data-key="jump"] { width: 4.2rem !important; height: 4.2rem !important; font-size: 0.8rem !important; }
 
-    /* PERBAIKAN 3: Panel Soal Bos Ringkas di Bagian Bawah (Bos Tetap Terlihat Jelas) */
+    /* Panel Soal Bos Ringkas di Bagian Bawah */
     #quiz {
       position: fixed !important;
-      bottom: 8px !important;
+      bottom: 4px !important;
       top: auto !important;
       left: 50% !important;
       transform: translateX(-50%) !important;
-      width: calc(100% - 1.5rem) !important;
-      max-width: 680px !important;
-      max-height: 48vh !important;
+      width: calc(100% - 1rem) !important;
+      max-width: 640px !important;
+      max-height: 38vh !important;
       z-index: 60 !important;
       background: rgba(6, 30, 24, 0.94) !important;
       -webkit-backdrop-filter: blur(10px);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.3) !important;
       overflow-y: auto !important;
-      padding: 0.5rem 0.75rem !important;
-      border-radius: 1rem !important;
-      box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6) !important;
+      padding: 0.35rem 0.6rem !important;
+      border-radius: 0.85rem !important;
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.6) !important;
     }
     #quiz #q-text {
-      font-size: 0.85rem !important;
-      line-height: 1.25 !important;
-      margin-top: 0.2rem !important;
+      font-size: 0.78rem !important;
+      line-height: 1.2 !important;
+      margin-top: 0.15rem !important;
     }
     #quiz #q-opts {
-      margin-top: 0.4rem !important;
-      gap: 0.35rem !important;
+      margin-top: 0.3rem !important;
+      gap: 0.25rem !important;
     }
     #quiz .opt {
-      padding: 0.4rem 0.6rem !important;
-      font-size: 0.75rem !important;
+      padding: 0.3rem 0.5rem !important;
+      font-size: 0.72rem !important;
     }
   }
 
-  /* Penyesuaian Ekstra untuk Layar HP Sangat Pendek (<420px) */
   @media (max-height: 420px) {
     #start-menu > div {
       padding: 1rem !important;
@@ -160,7 +158,7 @@
   <div id="start-menu" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-emerald-950/90 backdrop-blur-md">
     <div class="w-full max-w-md rounded-3xl border border-emerald-500/30 bg-emerald-900/80 p-5 sm:p-6 text-emerald-50 shadow-2xl backdrop-blur-xl">
       
-      <!-- Top Bar Menu Awal: Status & Tombol Pengaturan (Fullscreen & Suara) -->
+      <!-- Top Bar Menu Awal -->
       <div class="flex items-center justify-between mb-3 border-b border-emerald-700/50 pb-3">
         <span class="inline-block rounded-2xl bg-amber-400/20 px-3 py-1 text-xs font-bold text-amber-300 uppercase tracking-wider">
           Game Edukasi PAI
@@ -236,21 +234,18 @@
     </div>
   </div>
 
-  <!-- Pop-up Tutorial Bertahap & Simulasi Kontrol Interaktif -->
+  <!-- Pop-up Tutorial Bertahap -->
   <div id="tutorial-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-md">
     <div class="w-full max-w-lg rounded-3xl border border-emerald-500/40 bg-emerald-900/95 p-5 text-emerald-50 shadow-2xl backdrop-blur-xl flex flex-col items-center">
       
       <div id="tut-step-content" class="w-full text-center">
-        <!-- Judul & Deskripsi Langkah -->
         <h3 id="tut-title" class="text-xl sm:text-2xl font-extrabold text-amber-300">Panduan Kontrol: Maju & Mundur</h3>
         <p id="tut-desc" class="text-xs sm:text-sm text-emerald-200 mt-1 mb-2">Tekan tombol Kiri (◀) dan Kanan (▶) untuk menggerakkan karaktermu.</p>
         
-        <!-- Canvas Simulasi Interaktif -->
         <div id="sim-container" class="relative w-full h-36 bg-sky-200 rounded-2xl border-2 border-emerald-600 overflow-hidden mx-auto my-2 shadow-inner">
           <canvas id="sim-canvas" width="400" height="150" class="w-full h-full block"></canvas>
         </div>
 
-        <!-- Tombol Simulasi Khusus Layar Sentuh -->
         <div id="sim-controls" class="flex justify-between items-center my-2 px-2">
           <div class="flex gap-2">
             <button id="sim-btn-left" class="pad-btn w-12 h-12 rounded-xl bg-emerald-800 text-xl font-bold border-2 border-emerald-600 active:bg-amber-400 active:text-emerald-950">◀</button>
@@ -259,7 +254,6 @@
           <button id="sim-btn-jump" class="pad-btn w-20 h-12 rounded-xl bg-emerald-800 text-xs font-bold border-2 border-emerald-600 active:bg-amber-400 active:text-emerald-950">▲ Lompat</button>
         </div>
 
-        <!-- Daftar Peraturan Game (Langkah 3) -->
         <div id="tut-rules" class="hidden text-left space-y-2.5 bg-emerald-950/70 p-4 rounded-2xl border border-emerald-600/50 my-2 text-xs sm:text-sm">
           <div class="flex items-start gap-2.5">
             <span class="text-xl">📖</span>
@@ -284,7 +278,6 @@
         </div>
       </div>
 
-      <!-- Navigasi Langkah Tutorial -->
       <div class="w-full flex justify-between items-center mt-3 pt-3 border-t border-emerald-700/50">
         <div id="tut-indicator" class="text-xs font-bold text-amber-300">Langkah 1 dari 3</div>
         <button id="btn-tut-next" class="rounded-2xl bg-amber-400 px-6 py-2.5 text-sm font-bold text-emerald-950 shadow hover:bg-amber-300 transition focus:outline-none">
@@ -315,7 +308,7 @@
     </div>
   </div>
 
-  <!-- Header & Kontrol Navigasi Top Bar Saat Game Berlangsung -->
+  <!-- Header Game -->
   <header class="text-center w-full max-w-3xl flex flex-col items-center">
     <div class="w-full flex items-center justify-between px-2 mb-1">
       <button id="btn-home-top" class="rounded-xl border border-emerald-600 bg-emerald-800/80 px-3 py-1.5 text-xs font-semibold hover:bg-emerald-700 transition" title="Kembali ke Lobby Utama">
@@ -417,7 +410,6 @@
   const BOSS_DMG = 25;
   const SCORE = { star: 100, correct: 50, hp: 150 };
 
-  // Status Timer Boss
   let bossTimer = 60;
   let bossInterval = null;
 
@@ -532,7 +524,7 @@
   let camX = 0, worldW = 800, platforms = [], pits = [], cps = [];
 
   // Status Boss Battle
-  let mode = 'world'; // 'world' | 'boss'
+  let mode = 'world';
   const boss = { hp: 100, shown: 100, shake: 0, dying: 0, hurt: 0, atk: 0 };
   let laser = null, qList = [], qi = 0, curQ = null, qLocked = true, bossCorrect = 0, timers = [];
   let finalScore = 0;
@@ -762,7 +754,7 @@
     });
   });
 
-  // ---------- TUTORIAL BERTAHAP & SIMULASI INTERAKTIF ----------
+  // ---------- TUTORIAL BERTAHAP ----------
   let tutorialOpen = false;
   let tutStep = 1;
   const simCanvas = $('sim-canvas');
@@ -845,7 +837,6 @@
       updateTutStepUI();
       sfx.star();
     } else {
-      // Selesai Tutorial -> Mulai Permainan Asli
       tutorialOpen = false;
       if (simAnimId) cancelAnimationFrame(simAnimId);
       tutModalEl.classList.add('hidden');
@@ -854,7 +845,6 @@
     }
   });
 
-  // Kontrol Sentuh Simulasi khusus (Layar HP)
   const bindSimBtn = (btnId, key) => {
     const btn = $(btnId);
     if (!btn) return;
@@ -867,7 +857,6 @@
   bindSimBtn('sim-btn-right', 'right');
   bindSimBtn('sim-btn-jump', 'jump');
 
-  // Loop Fisika & Drawing Simulasi (Terisolasi)
   let lastSimTime = performance.now();
   function simLoop(now) {
     if (!tutorialOpen) return;
@@ -875,7 +864,6 @@
     lastSimTime = now;
 
     if (tutStep === 1 || tutStep === 2) {
-      // Update Fisika Karakter Simulasi
       const dir = (simHeld.right ? 1 : 0) - (simHeld.left ? 1 : 0);
       simPlayer.vx = dir * 180;
       if (dir !== 0) {
@@ -894,7 +882,6 @@
       simPlayer.x += simPlayer.vx * dt;
       simPlayer.y += simPlayer.vy * dt;
 
-      // Batas Arena Simulasi
       if (simPlayer.x < 10) simPlayer.x = 10;
       if (simPlayer.x > 360) simPlayer.x = 360;
 
@@ -905,16 +892,12 @@
         simPlayer.onGround = true;
       }
 
-      // Render Simulasi
       simCtx.clearRect(0, 0, 400, 150);
-      
-      // Langit & Rumput
       simCtx.fillStyle = '#7dd3fc'; simCtx.fillRect(0, 0, 400, 118);
       simCtx.fillStyle = '#22c55e'; simCtx.fillRect(0, 118, 400, 32);
       simCtx.fillStyle = '#15803d'; simCtx.fillRect(0, 118, 400, 6);
 
       if (tutStep === 1) {
-        // Objek Visual Langkah 1
         simCtx.fillStyle = '#0f172a';
         simCtx.font = 'bold 12px system-ui';
         simCtx.textAlign = 'center';
@@ -925,7 +908,6 @@
           simCtx.fillText('✨ Bagus! Kamu berhasil bergerak!', 200, 50);
         }
       } else if (tutStep === 2) {
-        // Balok Ilmu Simulasi
         simCtx.fillStyle = '#f59e0b';
         simCtx.fillRect(180, 45, 30, 30);
         simCtx.strokeStyle = '#92400e';
@@ -936,7 +918,6 @@
         simCtx.textAlign = 'center';
         simCtx.fillText('?', 195, 66);
 
-        // Jurang Simulasi
         simCtx.fillStyle = '#1c1917';
         simCtx.fillRect(280, 118, 50, 32);
 
@@ -950,7 +931,6 @@
         }
       }
 
-      // Render Karakter Simulasi
       const cx = simPlayer.x + simPlayer.w / 2;
       simCtx.fillStyle = 'rgba(0,0,0,0.2)';
       simCtx.beginPath();
@@ -1257,10 +1237,11 @@
   function bossReset() {
     clearLater();
     Object.assign(boss, { hp: 100, shown: 100, shake: 0, dying: 0, hurt: 0, atk: 0 });
-    Object.assign(player, { x: 90, y: 410 - player.h, vx: 0, vy: 0, face: 1, kb: 0, inv: 0, hidden: false });
+    // POSISI BARU KARAKTER: Dinaikkan ke y = 190 - player.h agar berada di area atas dan tidak tertutup kuis
+    Object.assign(player, { x: 80, y: 190 - player.h, vx: 0, vy: 0, face: 1, kb: 0, inv: 0, hidden: false });
     hp = MAX_HP; bossCorrect = 0; laser = null; particles = []; popups = []; won = false; camX = 0;
     qList = shuffle(BOSS_Q); qi = 0;
-    popups.push({ x: 600, y: 120, t: 0, text: 'Bos “Terakhir” muncul!', color: '#fde68a' });
+    popups.push({ x: 620, y: 90, t: 0, text: 'Bos “Terakhir” muncul!', color: '#fde68a' });
     sfx.wrong();
     startBossTimer();
     showQuestion();
@@ -1297,8 +1278,8 @@
       later(() => {
         boss.hp = Math.max(0, boss.hp - BOSS_DMG);
         boss.shake = 1; boss.hurt = 1;
-        burst(620, 230, '#fde047', 30);
-        popups.push({ x: 620, y: 150, t: 0, text: '-' + BOSS_DMG + '% HP Bos', color: '#fde68a' });
+        burst(620, 180, '#fde047', 30);
+        popups.push({ x: 620, y: 110, t: 0, text: '-' + BOSS_DMG + '% HP Bos', color: '#fde68a' });
         flashRGB = '255,255,255'; flashA = 0.5;
         sfx.hit();
       }, 450);
@@ -1357,7 +1338,6 @@
     sfx.win();
   }
 
-  // ---------- Respawn & Fall Logic ----------
   function respawn() {
     const c = cps.filter(k => k.on).pop();
     Object.assign(player, { x: c ? c.x : 50, y: 340, vx: 0, vy: 0, kb: 0, inv: 1.5, onGround: false });
@@ -1493,7 +1473,7 @@
     if (laser) { laser.t += dt; if (laser.t > 0.5) laser = null; }
     if (boss.dying > 0 && boss.dying < 1) {
       boss.dying = Math.min(1, boss.dying + dt / 1.4);
-      if (Math.random() < 0.7) burst(560 + Math.random() * 120, 170 + Math.random() * 120, Math.random() < 0.5 ? '#fde047' : '#c4b5fd', 3);
+      if (Math.random() < 0.7) burst(560 + Math.random() * 120, 130 + Math.random() * 100, Math.random() < 0.5 ? '#fde047' : '#c4b5fd', 3);
     }
   }
 
@@ -1821,7 +1801,7 @@
       ctx.fillRect(0, 0, W, H);
     }
 
-    const sx = W / 2, sy = 120;
+    const sx = W / 2, sy = 100;
     const sg = ctx.createRadialGradient(sx, sy, 10, sx, sy, 110);
     sg.addColorStop(0, 'rgba(239, 68, 68, 0.8)');
     sg.addColorStop(0.5, 'rgba(185, 28, 28, 0.4)');
@@ -1863,32 +1843,28 @@
     ctx.fillStyle = '#0f0505';
     ctx.fillRect(0, 410, W, 40);
 
-    ctx.strokeStyle = '#f97316';
+    // PLATFORM UTAMA PEMAIN DI MODE BOS (DI ATAS AGAR BEBAS DARI KUIS)
+    ctx.fillStyle = '#4c1d95';
+    rr(30, 190, 120, 14, 4);
+    ctx.fill();
+    ctx.strokeStyle = '#a78bfa';
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (let x = 0; x < W; x += 40) {
-      ctx.moveTo(x, 410);
-      ctx.lineTo(x + 15, 425);
-      ctx.lineTo(x + 35, 410);
-    }
     ctx.stroke();
-
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(0, 410, W, 4);
   }
 
   function drawBoss(t) {
     drawDoomsdayBackground(t);
 
     const dy = boss.dying, sh = boss.shake * 10 * Math.sin(t / 25);
-    const bx = 620 + sh - boss.atk * 60, by = 240 + Math.sin(t / 400) * 10;
+    // POSISI BOS DIDIKIT DINAIKKAN AGAR SEJARAJAH DENGAN PEMAIN DI ATAS
+    const bx = 620 + sh - boss.atk * 60, by = 180 + Math.sin(t / 400) * 10;
     ctx.save();
     ctx.globalAlpha = 1 - dy;
     ctx.translate(bx, by);
     ctx.scale(1 + dy * 0.5, 1 + dy * 0.5);
     ctx.shadowColor = boss.hurt > 0 ? '#fde047' : '#ef4444';
     ctx.shadowBlur = 30 + 20 * boss.hurt;
-    ctx.font = '150px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    ctx.font = '130px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('👾', 0, 0);
@@ -1908,19 +1884,19 @@
 
     if (!player.hidden) drawPlayer(t, player.inv > 0 && Math.floor(t / 80) % 2 ? 0.35 : 1);
 
-    const bw = 300, bxl = W / 2 - bw / 2;
+    const bw = 280, bxl = W / 2 - bw / 2;
     ctx.fillStyle = 'rgba(15,10,40,0.85)';
-    ctx.fillRect(bxl - 10, 10, bw + 20, 50);
+    ctx.fillRect(bxl - 10, 10, bw + 20, 46);
     ctx.fillStyle = '#ede9fe';
-    ctx.font = 'bold 14px system-ui, sans-serif';
+    ctx.font = 'bold 13px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('👾 Bos Terakhir • ' + Math.round(boss.hp) + '%', W / 2, 26);
+    ctx.fillText('👾 Bos Terakhir • ' + Math.round(boss.hp) + '%', W / 2, 25);
     ctx.fillStyle = '#4c1d95';
-    ctx.fillRect(bxl, 38, bw, 14);
+    ctx.fillRect(bxl, 35, bw, 12);
     ctx.fillStyle = boss.hp > 50 ? '#ef4444' : '#f97316';
-    ctx.fillRect(bxl, 38, bw * Math.max(0, boss.shown) / 100, 14);
+    ctx.fillRect(bxl, 35, bw * Math.max(0, boss.shown) / 100, 12);
     ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2;
-    ctx.strokeRect(bxl, 38, bw, 14);
+    ctx.strokeRect(bxl, 35, bw, 12);
   }
 
   function draw(t) {
