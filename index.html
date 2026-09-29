@@ -12,7 +12,7 @@
   .pad-btn { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   .pad-btn.active { background: #f5c451; color: #123; transform: scale(0.94); }
 
-  #modal { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 1rem; }
+  #modal { position: fixed; inset: 0; z-index: 50; display: none; items-center justify-center; padding: 1rem; }
   #modal.open { display: flex; }
   #modal .m-backdrop { position: absolute; inset: 0; background: rgba(6, 30, 24, .35);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transition: opacity .3s; }
@@ -47,8 +47,18 @@
     background-color: rgba(245, 196, 81, 0.2) !important;
   }
 
-  /* --- RESPONSIVE MOBILE & FULLSCREEN OPTIMIZATION --- */
+  /* --- RESPONSIVE MOBILE, FULLSCREEN & PHONE FRIENDLY --- */
   #mobile-portrait-hint { display: none; }
+
+  /* PERBAIKAN 2: Tampilan Lobby/Menu Awal Fleksibel di Semua Ukuran Layar */
+  #start-menu {
+    overflow-y: auto !important;
+    padding: 0.75rem !important;
+  }
+  #start-menu > div {
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+  }
 
   @media (max-width: 768px) and (orientation: portrait) {
     #mobile-portrait-hint { display: block; }
@@ -56,50 +66,99 @@
     .pad-btn[data-key="jump"] { width: 5rem !important; height: 5rem !important; font-size: 0.85rem !important; }
   }
 
-  /* Pengaturan Tampilan Mobile Landscape */
+  /* Pengaturan Tampilan Mobile Landscape & Fullscreen HP */
   @media (max-height: 520px) and (orientation: landscape) {
-    body { padding: 0.25rem 0.5rem !important; gap: 0.25rem !important; justify-content: flex-start !important; overflow-x: hidden; }
+    body { padding: 0.25rem 0.5rem !important; gap: 0.2rem !important; justify-content: flex-start !important; overflow-x: hidden; }
     header { margin-bottom: 0 !important; }
     header h1 { font-size: 0.95rem !important; }
     #kbhelp, #mobile-portrait-hint { display: none !important; }
     
     main { width: 100% !important; max-width: 100% !important; }
-    .relative { width: 100%; max-width: min(100vw - 1rem, calc((100vh - 60px) * 16 / 9)); margin: 0 auto; }
-    #game { max-height: calc(100vh - 60px); object-fit: contain; }
+    .relative { width: 100%; max-width: min(100vw - 1rem, calc((100vh - 55px) * 16 / 9)); margin: 0 auto; }
+    #game { max-height: calc(100vh - 55px); object-fit: contain; }
 
+    /* PERBAIKAN 1: Controller Dinaikkan & Digeser ke Tengah (Jempol Friendly) */
     #pad {
       position: fixed !important;
-      bottom: 10px !important;
+      bottom: 22px !important;
       left: 0 !important;
       right: 0 !important;
       width: 100% !important;
       max-width: 100% !important;
-      padding: 0 1.25rem !important;
+      padding: 0 max(2.5rem, 7vw) !important;
       z-index: 40 !important;
       pointer-events: none !important;
       background: transparent !important;
     }
     #pad .pad-btn {
       pointer-events: auto !important;
-      background: rgba(6, 78, 59, 0.75) !important;
+      background: rgba(6, 78, 59, 0.85) !important;
       -webkit-backdrop-filter: blur(6px);
       backdrop-filter: blur(6px);
-      border-color: rgba(52, 211, 153, 0.5) !important;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      border-color: rgba(52, 211, 153, 0.6) !important;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
     }
     #pad .pad-btn.active { background: #f5c451 !important; color: #123 !important; }
-    .pad-btn { width: 3.5rem !important; height: 3.5rem !important; font-size: 1.2rem !important; }
-    .pad-btn[data-key="jump"] { width: 4rem !important; height: 4rem !important; font-size: 0.8rem !important; }
+    .pad-btn { width: 3.6rem !important; height: 3.6rem !important; font-size: 1.25rem !important; }
+    .pad-btn[data-key="jump"] { width: 4.2rem !important; height: 4.2rem !important; font-size: 0.8rem !important; }
 
-    #quiz { position: fixed; inset: 10px; z-index: 60; background: rgba(6, 40, 32, 0.96); overflow-y: auto; }
+    /* PERBAIKAN 3: Panel Soal Bos Ringkas di Bagian Bawah (Bos Tetap Terlihat Jelas) */
+    #quiz {
+      position: fixed !important;
+      bottom: 8px !important;
+      top: auto !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      width: calc(100% - 1.5rem) !important;
+      max-width: 680px !important;
+      max-height: 48vh !important;
+      z-index: 60 !important;
+      background: rgba(6, 30, 24, 0.94) !important;
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      overflow-y: auto !important;
+      padding: 0.5rem 0.75rem !important;
+      border-radius: 1rem !important;
+      box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.6) !important;
+    }
+    #quiz #q-text {
+      font-size: 0.85rem !important;
+      line-height: 1.25 !important;
+      margin-top: 0.2rem !important;
+    }
+    #quiz #q-opts {
+      margin-top: 0.4rem !important;
+      gap: 0.35rem !important;
+    }
+    #quiz .opt {
+      padding: 0.4rem 0.6rem !important;
+      font-size: 0.75rem !important;
+    }
+  }
+
+  /* Penyesuaian Ekstra untuk Layar HP Sangat Pendek (<420px) */
+  @media (max-height: 420px) {
+    #start-menu > div {
+      padding: 1rem !important;
+    }
+    #start-menu h2 {
+      font-size: 1.35rem !important;
+    }
+    #start-menu .gender-card {
+      padding: 0.4rem !important;
+    }
+    #start-menu .gender-card span.text-3xl {
+      font-size: 1.5rem !important;
+    }
   }
 </style>
 </head>
 <body class="min-h-full flex flex-col items-center justify-center gap-3 p-3 text-emerald-50">
 
   <!-- Overlay Menu Awal (Lobby) -->
-  <div id="start-menu" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-md">
-    <div class="w-full max-w-md rounded-3xl border border-emerald-500/30 bg-emerald-900/80 p-6 text-emerald-50 shadow-2xl backdrop-blur-xl">
+  <div id="start-menu" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-emerald-950/90 backdrop-blur-md">
+    <div class="w-full max-w-md rounded-3xl border border-emerald-500/30 bg-emerald-900/80 p-5 sm:p-6 text-emerald-50 shadow-2xl backdrop-blur-xl">
       
       <!-- Top Bar Menu Awal: Status & Tombol Pengaturan (Fullscreen & Suara) -->
       <div class="flex items-center justify-between mb-3 border-b border-emerald-700/50 pb-3">
@@ -123,7 +182,7 @@
         </p>
       </div>
 
-      <form id="menu-form" class="mt-5 space-y-4" onsubmit="return false;">
+      <form id="menu-form" class="mt-4 sm:mt-5 space-y-3 sm:space-y-4" onsubmit="return false;">
         <!-- Input Nama -->
         <div>
           <label for="player-name-input" class="block text-xs font-bold text-amber-200 uppercase tracking-wide mb-1">
@@ -165,7 +224,7 @@
         <button 
           type="button" 
           id="btn-start-game"
-          class="w-full rounded-2xl bg-amber-400 py-3.5 text-base font-bold text-emerald-950 shadow-lg transition hover:bg-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-300/50 active:scale-[0.98] mt-2"
+          class="w-full rounded-2xl bg-amber-400 py-3 sm:py-3.5 text-base font-bold text-emerald-950 shadow-lg transition hover:bg-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-300/50 active:scale-[0.98] mt-2"
         >
           🚀 Start Game (Mulai)
         </button>
@@ -1618,7 +1677,6 @@
     [x + 18, x + 112].forEach(wx => { rr(wx, b - 46, 20, 26, [10, 10, 0, 0]); ctx.fill(); });
   }
 
-  // BACKGROUND LEVEL 1 & LEVEL 2 (Diambil dari Kode Lama)
   function drawWorld(t) {
     const dusk = AREAS[areaIdx].dusk, L = LEVELS[areaIdx];
     const sky = ctx.createLinearGradient(0, 0, 0, H);
@@ -1749,7 +1807,6 @@
     ctx.restore();
   }
 
-  // BACKGROUND LEVEL BOS DOOMSDAY (Diambil dari Kode Lama)
   function drawDoomsdayBackground(t) {
     const sky = ctx.createLinearGradient(0, 0, 0, H);
     sky.addColorStop(0, '#2a0808');
@@ -1759,13 +1816,11 @@
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
-    // Efek Kilatan Petir Merah
     if (Math.random() < 0.04) {
       ctx.fillStyle = 'rgba(254, 202, 202, 0.15)';
       ctx.fillRect(0, 0, W, H);
     }
 
-    // Matahari Kiamat/Doomsday
     const sx = W / 2, sy = 120;
     const sg = ctx.createRadialGradient(sx, sy, 10, sx, sy, 110);
     sg.addColorStop(0, 'rgba(239, 68, 68, 0.8)');
@@ -1782,7 +1837,6 @@
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Siluet Gunung Kehancuran
     ctx.fillStyle = '#1c0a0a';
     ctx.beginPath();
     ctx.moveTo(0, H);
@@ -1794,7 +1848,6 @@
     ctx.closePath();
     ctx.fill();
 
-    // Efek Percikan Api / Partikel Bara Berpijar
     for (let i = 0; i < 35; i++) {
       const mx = (i * 37 + t * 0.12) % (W + 100) - 50;
       const my = (i * 53 + t * 0.25) % (H + 50) - 20;
@@ -1807,11 +1860,9 @@
     }
     ctx.globalAlpha = 1;
 
-    // Tanah Pijakan
     ctx.fillStyle = '#0f0505';
     ctx.fillRect(0, 410, W, 40);
 
-    // Retakan Lahar Panas
     ctx.strokeStyle = '#f97316';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -1826,7 +1877,6 @@
     ctx.fillRect(0, 410, W, 4);
   }
 
-  // RENDER ARENA BOS (Menggunakan Background Doomsday Lengkap)
   function drawBoss(t) {
     drawDoomsdayBackground(t);
 
