@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Petualangan PAI by Indra Riskiah</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
@@ -46,6 +46,53 @@
     border-color: #f5c451 !important;
     background-color: rgba(245, 196, 81, 0.2) !important;
   }
+
+  /* --- RESPONSIVE MOBILE & FULLSCREEN OPTIMIZATION --- */
+  #mobile-portrait-hint { display: none; }
+
+  @media (max-width: 768px) and (orientation: portrait) {
+    #mobile-portrait-hint { display: block; }
+    .pad-btn { width: 4.2rem !important; height: 4.2rem !important; font-size: 1.4rem !important; }
+    .pad-btn[data-key="jump"] { width: 5rem !important; height: 5rem !important; font-size: 0.85rem !important; }
+  }
+
+  /* Pengaturan Tampilan Mobile Landscape */
+  @media (max-height: 520px) and (orientation: landscape) {
+    body { padding: 0.25rem 0.5rem !important; gap: 0.25rem !important; justify-content: flex-start !important; overflow-x: hidden; }
+    header { margin-bottom: 0 !important; }
+    header h1 { font-size: 0.95rem !important; }
+    #kbhelp, #mobile-portrait-hint { display: none !important; }
+    
+    main { width: 100% !important; max-width: 100% !important; }
+    .relative { width: 100%; max-width: min(100vw - 1rem, calc((100vh - 60px) * 16 / 9)); margin: 0 auto; }
+    #game { max-height: calc(100vh - 60px); object-fit: contain; }
+
+    #pad {
+      position: fixed !important;
+      bottom: 10px !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      padding: 0 1.25rem !important;
+      z-index: 40 !important;
+      pointer-events: none !important;
+      background: transparent !important;
+    }
+    #pad .pad-btn {
+      pointer-events: auto !important;
+      background: rgba(6, 78, 59, 0.75) !important;
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      border-color: rgba(52, 211, 153, 0.5) !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    #pad .pad-btn.active { background: #f5c451 !important; color: #123 !important; }
+    .pad-btn { width: 3.5rem !important; height: 3.5rem !important; font-size: 1.2rem !important; }
+    .pad-btn[data-key="jump"] { width: 4rem !important; height: 4rem !important; font-size: 0.8rem !important; }
+
+    #quiz { position: fixed; inset: 10px; z-index: 60; background: rgba(6, 40, 32, 0.96); overflow-y: auto; }
+  }
 </style>
 </head>
 <body class="min-h-full flex flex-col items-center justify-center gap-3 p-3 text-emerald-50">
@@ -53,10 +100,23 @@
   <!-- Overlay Menu Awal (Lobby) -->
   <div id="start-menu" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-md">
     <div class="w-full max-w-md rounded-3xl border border-emerald-500/30 bg-emerald-900/80 p-6 text-emerald-50 shadow-2xl backdrop-blur-xl">
-      <div class="text-center">
-        <span class="inline-block rounded-2xl bg-amber-400/20 px-3 py-1 text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">
+      
+      <!-- Top Bar Menu Awal: Status & Tombol Pengaturan (Fullscreen & Suara) -->
+      <div class="flex items-center justify-between mb-3 border-b border-emerald-700/50 pb-3">
+        <span class="inline-block rounded-2xl bg-amber-400/20 px-3 py-1 text-xs font-bold text-amber-300 uppercase tracking-wider">
           Game Edukasi PAI
         </span>
+        <div class="flex gap-2">
+          <button id="menu-btn-fullscreen" class="rounded-xl border border-amber-500/80 bg-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 transition flex items-center gap-1">
+            ⛶ Fullscreen
+          </button>
+          <button id="menu-mute" class="rounded-xl border border-emerald-600 bg-emerald-800/80 px-2.5 py-1 text-xs font-semibold hover:bg-emerald-700 transition" aria-pressed="false">
+            🔊 Suara
+          </button>
+        </div>
+      </div>
+
+      <div class="text-center">
         <h2 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">Petualangan PAI</h2>
         <p class="mt-1 text-xs sm:text-sm text-emerald-200/80">
           Isi nama & pilih karaktermu sebelum memulai petualangan ilmu!
@@ -117,6 +177,64 @@
     </div>
   </div>
 
+  <!-- Pop-up Tutorial Bertahap & Simulasi Kontrol Interaktif -->
+  <div id="tutorial-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-md">
+    <div class="w-full max-w-lg rounded-3xl border border-emerald-500/40 bg-emerald-900/95 p-5 text-emerald-50 shadow-2xl backdrop-blur-xl flex flex-col items-center">
+      
+      <div id="tut-step-content" class="w-full text-center">
+        <!-- Judul & Deskripsi Langkah -->
+        <h3 id="tut-title" class="text-xl sm:text-2xl font-extrabold text-amber-300">Panduan Kontrol: Maju & Mundur</h3>
+        <p id="tut-desc" class="text-xs sm:text-sm text-emerald-200 mt-1 mb-2">Tekan tombol Kiri (◀) dan Kanan (▶) untuk menggerakkan karaktermu.</p>
+        
+        <!-- Canvas Simulasi Interaktif -->
+        <div id="sim-container" class="relative w-full h-36 bg-sky-200 rounded-2xl border-2 border-emerald-600 overflow-hidden mx-auto my-2 shadow-inner">
+          <canvas id="sim-canvas" width="400" height="150" class="w-full h-full block"></canvas>
+        </div>
+
+        <!-- Tombol Simulasi Khusus Layar Sentuh -->
+        <div id="sim-controls" class="flex justify-between items-center my-2 px-2">
+          <div class="flex gap-2">
+            <button id="sim-btn-left" class="pad-btn w-12 h-12 rounded-xl bg-emerald-800 text-xl font-bold border-2 border-emerald-600 active:bg-amber-400 active:text-emerald-950">◀</button>
+            <button id="sim-btn-right" class="pad-btn w-12 h-12 rounded-xl bg-emerald-800 text-xl font-bold border-2 border-emerald-600 active:bg-amber-400 active:text-emerald-950">▶</button>
+          </div>
+          <button id="sim-btn-jump" class="pad-btn w-20 h-12 rounded-xl bg-emerald-800 text-xs font-bold border-2 border-emerald-600 active:bg-amber-400 active:text-emerald-950">▲ Lompat</button>
+        </div>
+
+        <!-- Daftar Peraturan Game (Langkah 3) -->
+        <div id="tut-rules" class="hidden text-left space-y-2.5 bg-emerald-950/70 p-4 rounded-2xl border border-emerald-600/50 my-2 text-xs sm:text-sm">
+          <div class="flex items-start gap-2.5">
+            <span class="text-xl">📖</span>
+            <p><b>Kumpulkan Buku:</b> Ambil semua buku yang tersebar di sepanjang jalan.</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="text-xl">❓</span>
+            <p><b>Sundul Balok Ilmu:</b> Sundul balok bermotif '?' untuk membaca rangkuman materi PAI & dapatkan Bintang ⭐.</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="text-xl">⛩️</span>
+            <p><b>Pilih Gerbang yang Tepat:</b> Perhatikan Kartu Kasus, lalu masuklah ke gerbang <b>Kiamat Sugra</b> atau <b>Kubra</b> yang sesuai!</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="text-xl">❤️</span>
+            <p><b>Jaga Nyawa (HP):</b> Hindari jatuh ke jurang atau salah masuk gerbang agar HP tidak berkurang.</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="text-xl">👾</span>
+            <p><b>Kalahkan Bos:</b> Jawab soal kuis PAI dengan benar di akhir arena untuk memenangkan permainan.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigasi Langkah Tutorial -->
+      <div class="w-full flex justify-between items-center mt-3 pt-3 border-t border-emerald-700/50">
+        <div id="tut-indicator" class="text-xs font-bold text-amber-300">Langkah 1 dari 3</div>
+        <button id="btn-tut-next" class="rounded-2xl bg-amber-400 px-6 py-2.5 text-sm font-bold text-emerald-950 shadow hover:bg-amber-300 transition focus:outline-none">
+          Lanjut ➡️
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Overlay Pause Menu -->
   <div id="pause-menu" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-emerald-950/80 backdrop-blur-md">
     <div class="w-full max-w-sm rounded-3xl border border-emerald-500/40 bg-emerald-900/90 p-6 text-center text-emerald-50 shadow-2xl">
@@ -138,23 +256,28 @@
     </div>
   </div>
 
-  <!-- Header & Kontrol Navigasi Top Bar -->
+  <!-- Header & Kontrol Navigasi Top Bar Saat Game Berlangsung -->
   <header class="text-center w-full max-w-3xl flex flex-col items-center">
     <div class="w-full flex items-center justify-between px-2 mb-1">
       <button id="btn-home-top" class="rounded-xl border border-emerald-600 bg-emerald-800/80 px-3 py-1.5 text-xs font-semibold hover:bg-emerald-700 transition" title="Kembali ke Lobby Utama">
         🏠 Home
       </button>
-      <h1 class="text-lg sm:text-2xl font-bold tracking-tight">Petualangan PAI 📖</h1>
-      <div class="flex gap-2">
-        <button id="btn-pause-top" class="rounded-xl border border-amber-600/80 bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 transition" title="Pause Game">
+      <h1 class="text-lg sm:text-xl font-bold tracking-tight text-amber-300">Petualangan PAI 📖</h1>
+      <div class="flex gap-1.5 sm:gap-2">
+        <button id="btn-fullscreen" class="rounded-xl border border-amber-500/80 bg-amber-500/20 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 transition flex items-center gap-1" title="Layar Penuh">
+          ⛶ Full
+        </button>
+        <button id="btn-pause-top" class="rounded-xl border border-amber-600/80 bg-amber-500/20 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 transition" title="Pause Game">
           ⏸️ Pause
         </button>
-        <button id="mute" class="rounded-xl border border-emerald-600 bg-emerald-800/80 px-3 py-1.5 text-xs" aria-pressed="false">
+        <button id="mute" class="rounded-xl border border-emerald-600 bg-emerald-800/80 px-2.5 sm:px-3 py-1.5 text-xs font-semibold" aria-pressed="false">
           🔊 Suara
         </button>
       </div>
     </div>
-    <p id="hint" class="text-xs sm:text-sm text-emerald-200/80">Lompati jurang, kumpulkan mushaf, sundul Balok Ilmu ❓, lalu masuk gerbang yang tepat!</p>
+    <p id="mobile-portrait-hint" class="mt-1 text-[11px] text-amber-300/90 text-center bg-amber-950/40 px-3 py-1 rounded-lg border border-amber-500/30">
+      📱 Tips: Putar HP ke Landscape atau tekan tombol <b>⛶ Fullscreen</b> agar layar lebih luas!
+    </p>
   </header>
 
   <main class="w-full max-w-3xl">
@@ -359,6 +482,8 @@
   const modalEl = $('modal'), okBtn = $('m-ok'), cardEl = $('case-card');
   const quizEl = $('quiz'), padEl = $('pad'), pauseEl = $('pause-menu');
   const startMenuEl = $('start-menu'), btnStartGame = $('btn-start-game'), nameInput = $('player-name-input');
+  const btnFullscreen = $('btn-fullscreen'), menuBtnFullscreen = $('menu-btn-fullscreen');
+  const tutModalEl = $('tutorial-modal'), btnTutNext = $('btn-tut-next');
 
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
   const later = (fn, ms) => timers.push(setTimeout(fn, ms));
@@ -369,7 +494,48 @@
     return pool[Math.floor(Math.random() * pool.length)];
   };
 
-  // ---------- WebAudio Background Music System ----------
+  // ---------- Fullscreen System ----------
+  async function toggleFullscreen() {
+    try {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen();
+        } else if (docEl.webkitRequestFullscreen) {
+          await docEl.webkitRequestFullscreen();
+        }
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        }
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      }
+    } catch (err) {
+      console.warn("Fullscreen toggle info:", err);
+    }
+  }
+
+  if (btnFullscreen) btnFullscreen.addEventListener('click', toggleFullscreen);
+  if (menuBtnFullscreen) menuBtnFullscreen.addEventListener('click', toggleFullscreen);
+
+  function updateFullscreenBtn() {
+    const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    const txt = isFS ? '🗗 Full' : '⛶ Fullscreen';
+    if (btnFullscreen) btnFullscreen.innerHTML = txt;
+    if (menuBtnFullscreen) menuBtnFullscreen.innerHTML = txt;
+  }
+
+  document.addEventListener('fullscreenchange', updateFullscreenBtn);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+
+  // ---------- WebAudio Sound System ----------
   let audioCtx = null, muted = false;
   let bgmStep = 0, bgmMode = 'menu', bgmTimeout = null;
 
@@ -401,37 +567,25 @@
     if (muted || !audioCtx || isPaused) return;
 
     if (bgmMode === 'menu' || bgmMode === 'level') {
-      // Drone Tangga Nada Hijaz (Root: D3 = 146.83Hz, Fifth: A3 = 220Hz)
       if (bgmStep % 8 === 0) {
         tone(146.83, 0, 1.8, 'sine', 0.035);
         tone(220.00, 0, 1.8, 'sine', 0.02);
       }
-      
-      // Melodi Lembut Timur Tengah (Hijaz D: D3, Eb3, F#3, G3, A3, Bb3, C4, D4)
       const hijazMelody = [
         293.66, 311.13, 369.99, 392.00, 440.00, 369.99, 311.13, 293.66,
         220.00, 293.66, 311.13, 369.99, 440.00, 466.16, 440.00, 369.99,
         392.00, 440.00, 523.25, 440.00, 369.99, 311.13, 293.66, 220.00,
         146.83, 220.00, 293.66, 311.13, 293.66, 220.00, 185.00, 146.83
       ];
-      
       const note = hijazMelody[bgmStep % hijazMelody.length];
       tone(note, 0, 0.32, 'triangle', 0.03);
       
-      // Ritmik Gendang/Frame Drum Halus
-      if (bgmStep % 2 === 0) {
-        tone(85, 0, 0.07, 'sine', 0.035, 40);
-      } else if (bgmStep % 4 === 3) {
-        tone(350, 0, 0.04, 'triangle', 0.015, 90);
-      }
+      if (bgmStep % 2 === 0) tone(85, 0, 0.07, 'sine', 0.035, 40);
+      else if (bgmStep % 4 === 3) tone(350, 0, 0.04, 'triangle', 0.015, 90);
 
     } else if (bgmMode === 'boss') {
-      // Musik Dramatis Fase Bos (Tempo cepat, nada tegang phrygian)
-      if (bgmStep % 2 === 0) {
-        tone(65.41, 0, 0.14, 'sawtooth', 0.06, 35);
-      } else {
-        tone(73.42, 0, 0.14, 'square', 0.05, 40);
-      }
+      if (bgmStep % 2 === 0) tone(65.41, 0, 0.14, 'sawtooth', 0.06, 35);
+      else tone(73.42, 0, 0.14, 'square', 0.05, 40);
 
       const bossMelody = [
         261.63, 277.18, 311.13, 261.63, 349.23, 311.13, 277.18, 261.63,
@@ -440,9 +594,7 @@
       tone(bossMelody[bgmStep % bossMelody.length], 0, 0.1, 'sawtooth', 0.04);
       tone(1100, 0, 0.03, 'square', 0.02, 180);
 
-      if (bgmStep % 4 === 2) {
-        tone(160, 0, 0.18, 'sawtooth', 0.07, 45);
-      }
+      if (bgmStep % 4 === 2) tone(160, 0, 0.18, 'sawtooth', 0.07, 45);
     }
 
     bgmStep++;
@@ -450,9 +602,7 @@
 
   function scheduleBGM() {
     if (bgmTimeout) clearTimeout(bgmTimeout);
-    if (!muted && audioCtx && !isPaused) {
-      playBGMStep();
-    }
+    if (!muted && audioCtx && !isPaused) playBGMStep();
     const speed = (bgmMode === 'boss') ? 170 : 320;
     bgmTimeout = setTimeout(scheduleBGM, speed);
   }
@@ -464,7 +614,6 @@
       [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, i * 0.08, i === 3 ? 0.4 : 0.14, 'triangle', 0.14));
       tone(3136, 0.3, 0.3, 'sine', 0.05);
     },
-    // Sound Effect Kemenangan saat Bos Kalah
     win() {
       [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, i) => {
         tone(f, i * 0.1, 0.35, 'triangle', 0.16);
@@ -484,17 +633,21 @@
 
   ['pointerdown', 'keydown', 'click'].forEach(ev => window.addEventListener(ev, ensureAudio, { passive: true }));
 
-  const muteBtn = $('mute');
-  muteBtn.addEventListener('click', () => {
+  function toggleMute() {
     muted = !muted;
-    muteBtn.textContent = muted ? '🔇 Suara Off' : '🔊 Suara On';
-    muteBtn.setAttribute('aria-pressed', String(muted));
-    muteBtn.blur();
-  });
+    const txt = muted ? '🔇 Suara Off' : '🔊 Suara On';
+    $('mute').textContent = txt;
+    $('menu-mute').textContent = txt;
+    $('mute').setAttribute('aria-pressed', String(muted));
+    $('menu-mute').setAttribute('aria-pressed', String(muted));
+  }
 
-  // ---------- Menu & Mekanik Pause/Resume/Home ----------
+  $('mute').addEventListener('click', toggleMute);
+  $('menu-mute').addEventListener('click', toggleMute);
+
+  // ---------- Menu & Pause System ----------
   function togglePause() {
-    if (!gameStarted || won) return;
+    if (!gameStarted || won || tutorialOpen) return;
     isPaused = !isPaused;
     if (isPaused) {
       releaseAll();
@@ -517,10 +670,12 @@
   function goHome() {
     isPaused = false;
     gameStarted = false;
+    tutorialOpen = false;
     if (bossInterval) clearInterval(bossInterval);
     pauseEl.classList.add('hidden');
     pauseEl.classList.remove('flex');
     quizEl.classList.remove('open');
+    tutModalEl.classList.add('hidden');
     modalOpen = false;
     modalEl.classList.remove('show', 'open');
     startMenuEl.style.display = 'flex';
@@ -548,7 +703,18 @@
     });
   });
 
-  function startGame() {
+  // ---------- TUTORIAL BERTAHAP & SIMULASI INTERAKTIF ----------
+  let tutorialOpen = false;
+  let tutStep = 1;
+  const simCanvas = $('sim-canvas');
+  const simCtx = simCanvas.getContext('2d');
+  const simPlayer = { x: 50, y: 88, w: 24, h: 32, vx: 0, vy: 0, onGround: true, face: 1 };
+  const simHeld = { left: false, right: false, jump: false };
+  let simAnimId = null;
+  let simHasMoved = false;
+  let simHasJumped = false;
+
+  function initTutorial() {
     ensureAudio();
     const val = nameInput.value.trim();
     playerName = val !== '' ? val : 'Petualang';
@@ -556,22 +722,213 @@
     const checkedRadio = document.querySelector('input[name="gender-opt"]:checked');
     playerGender = checkedRadio ? checkedRadio.value : 'L';
 
+    startMenuEl.style.display = 'none';
+    tutorialOpen = true;
+    tutStep = 1;
+    simHasMoved = false;
+    simHasJumped = false;
+    
+    tutModalEl.classList.remove('hidden');
+    tutModalEl.classList.add('flex');
+    updateTutStepUI();
+    startSimLoop();
+  }
+
+  btnStartGame.addEventListener('click', initTutorial);
+  nameInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); initTutorial(); }
+  });
+
+  function updateTutStepUI() {
+    const titleEl = $('tut-title');
+    const descEl = $('tut-desc');
+    const simContainer = $('sim-container');
+    const simControls = $('sim-controls');
+    const rulesEl = $('tut-rules');
+    const indicatorEl = $('tut-indicator');
+
+    simPlayer.x = 50;
+    simPlayer.y = 88;
+    simPlayer.vx = 0;
+    simPlayer.vy = 0;
+    simHeld.left = simHeld.right = simHeld.jump = false;
+
+    if (tutStep === 1) {
+      titleEl.textContent = '🕹️ Langkah 1: Panduan Bergerak';
+      descEl.textContent = 'Tekan Kiri (◀) dan Kanan (▶) pada layar atau tombol Keyboard (A / D / Panah) untuk melangkah.';
+      simContainer.classList.remove('hidden');
+      simControls.classList.remove('hidden');
+      rulesEl.classList.add('hidden');
+      indicatorEl.textContent = 'Langkah 1 dari 3';
+      btnTutNext.textContent = 'Lanjut ke Lompat ➡️';
+    } else if (tutStep === 2) {
+      titleEl.textContent = '🦘 Langkah 2: Panduan Melompat';
+      descEl.textContent = 'Tekan tombol Lompat (▲) atau Spasi / W / Panah Atas untuk melompati rintangan & menyundul Balok Ilmu.';
+      simContainer.classList.remove('hidden');
+      simControls.classList.remove('hidden');
+      rulesEl.classList.add('hidden');
+      indicatorEl.textContent = 'Langkah 2 dari 3';
+      btnTutNext.textContent = 'Lanjut ke Aturan Game ➡️';
+    } else if (tutStep === 3) {
+      titleEl.textContent = '📜 Langkah 3: Peraturan Permainan';
+      descEl.textContent = 'Pahami misi & aturan utama di bawah ini sebelum memulai petualangan!';
+      simContainer.classList.add('hidden');
+      simControls.classList.add('hidden');
+      rulesEl.classList.remove('hidden');
+      indicatorEl.textContent = 'Langkah 3 dari 3';
+      btnTutNext.textContent = '🚀 Mulai Permainan!';
+    }
+  }
+
+  btnTutNext.addEventListener('click', () => {
+    if (tutStep < 3) {
+      tutStep++;
+      updateTutStepUI();
+      sfx.star();
+    } else {
+      // Selesai Tutorial -> Mulai Permainan Asli
+      tutorialOpen = false;
+      if (simAnimId) cancelAnimationFrame(simAnimId);
+      tutModalEl.classList.add('hidden');
+      tutModalEl.classList.remove('flex');
+      actuallyStartGame();
+    }
+  });
+
+  // Kontrol Sentuh Simulasi khusus (Layar HP)
+  const bindSimBtn = (btnId, key) => {
+    const btn = $(btnId);
+    if (!btn) return;
+    const on = e => { e.preventDefault(); simHeld[key] = true; btn.classList.add('active'); };
+    const off = e => { e.preventDefault(); simHeld[key] = false; btn.classList.remove('active'); };
+    btn.addEventListener('pointerdown', on);
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => btn.addEventListener(t, off));
+  };
+  bindSimBtn('sim-btn-left', 'left');
+  bindSimBtn('sim-btn-right', 'right');
+  bindSimBtn('sim-btn-jump', 'jump');
+
+  // Loop Fisika & Drawing Simulasi (Terisolasi)
+  let lastSimTime = performance.now();
+  function simLoop(now) {
+    if (!tutorialOpen) return;
+    const dt = Math.min((now - lastSimTime) / 1000, 0.033);
+    lastSimTime = now;
+
+    if (tutStep === 1 || tutStep === 2) {
+      // Update Fisika Karakter Simulasi
+      const dir = (simHeld.right ? 1 : 0) - (simHeld.left ? 1 : 0);
+      simPlayer.vx = dir * 180;
+      if (dir !== 0) {
+        simPlayer.face = dir;
+        simHasMoved = true;
+      }
+
+      if (tutStep === 2 && simHeld.jump && simPlayer.onGround) {
+        simPlayer.vy = -450;
+        simPlayer.onGround = false;
+        simHasJumped = true;
+        sfx.bump();
+      }
+
+      simPlayer.vy = Math.min(simPlayer.vy + 1200 * dt, 500);
+      simPlayer.x += simPlayer.vx * dt;
+      simPlayer.y += simPlayer.vy * dt;
+
+      // Batas Arena Simulasi
+      if (simPlayer.x < 10) simPlayer.x = 10;
+      if (simPlayer.x > 360) simPlayer.x = 360;
+
+      const groundY = 118 - simPlayer.h;
+      if (simPlayer.y >= groundY) {
+        simPlayer.y = groundY;
+        simPlayer.vy = 0;
+        simPlayer.onGround = true;
+      }
+
+      // Render Simulasi
+      simCtx.clearRect(0, 0, 400, 150);
+      
+      // Langit & Rumput
+      simCtx.fillStyle = '#7dd3fc'; simCtx.fillRect(0, 0, 400, 118);
+      simCtx.fillStyle = '#22c55e'; simCtx.fillRect(0, 118, 400, 32);
+      simCtx.fillStyle = '#15803d'; simCtx.fillRect(0, 118, 400, 6);
+
+      if (tutStep === 1) {
+        // Objek Visual Langkah 1
+        simCtx.fillStyle = '#0f172a';
+        simCtx.font = 'bold 12px system-ui';
+        simCtx.textAlign = 'center';
+        simCtx.fillText('◀ Cobalah Gerak Kiri / Kanan ▶', 200, 30);
+
+        if (simHasMoved) {
+          simCtx.fillStyle = '#15803d';
+          simCtx.fillText('✨ Bagus! Kamu berhasil bergerak!', 200, 50);
+        }
+      } else if (tutStep === 2) {
+        // Balok Ilmu Simulasi
+        simCtx.fillStyle = '#f59e0b';
+        simCtx.fillRect(180, 45, 30, 30);
+        simCtx.strokeStyle = '#92400e';
+        simCtx.lineWidth = 2;
+        simCtx.strokeRect(180, 45, 30, 30);
+        simCtx.fillStyle = '#ffffff';
+        simCtx.font = 'bold 18px system-ui';
+        simCtx.textAlign = 'center';
+        simCtx.fillText('?', 195, 66);
+
+        // Jurang Simulasi
+        simCtx.fillStyle = '#1c1917';
+        simCtx.fillRect(280, 118, 50, 32);
+
+        simCtx.fillStyle = '#0f172a';
+        simCtx.font = 'bold 12px system-ui';
+        simCtx.fillText('▲ Tekan Tombol Lompat!', 200, 25);
+
+        if (simHasJumped) {
+          simCtx.fillStyle = '#15803d';
+          simCtx.fillText('🎉 Hebat! Melompat berhasil!', 200, 95);
+        }
+      }
+
+      // Render Karakter Simulasi
+      const cx = simPlayer.x + simPlayer.w / 2;
+      simCtx.fillStyle = 'rgba(0,0,0,0.2)';
+      simCtx.beginPath();
+      simCtx.ellipse(cx, simPlayer.y + simPlayer.h - 1, 10, 4, 0, 0, Math.PI * 2);
+      simCtx.fill();
+
+      if (playerGender === 'P') {
+        simCtx.fillStyle = '#be185d';
+        simCtx.fillRect(simPlayer.x, simPlayer.y + 12, simPlayer.w, simPlayer.h - 12);
+        simCtx.fillStyle = '#fb7185';
+        simCtx.fillRect(simPlayer.x - 1, simPlayer.y, simPlayer.w + 2, 14);
+      } else {
+        simCtx.fillStyle = '#059669';
+        simCtx.fillRect(simPlayer.x, simPlayer.y + 8, simPlayer.w, simPlayer.h - 8);
+        simCtx.fillStyle = '#dc2626';
+        simCtx.fillRect(simPlayer.x + 2, simPlayer.y, simPlayer.w - 4, 8);
+      }
+    }
+
+    simAnimId = requestAnimationFrame(simLoop);
+  }
+
+  function startSimLoop() {
+    lastSimTime = performance.now();
+    simAnimId = requestAnimationFrame(simLoop);
+  }
+
+  function actuallyStartGame() {
     gameStarted = true;
     isPaused = false;
-    startMenuEl.style.display = 'none';
-    
     newGame();
     sfx.star();
   }
 
-  btnStartGame.addEventListener('click', startGame);
-  nameInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); startGame(); }
-  });
-
   function loadArea(i) {
     areaIdx = i;
-    hp = MAX_HP; // Reset HP ketika masuk ke level baru (termasuk dari Level 1 ke Level 2)
+    hp = MAX_HP; 
     areaStartStars = totalStars;
     bgmMode = 'level';
     scheduleBGM();
@@ -603,7 +960,6 @@
     mode = 'world'; laser = null; curQ = null;
     quizEl.classList.remove('open');
     padEl.style.display = ''; $('kbhelp').style.display = '';
-    $('hint').textContent = 'Lompati jurang, kumpulkan mushaf, sundul Balok Ilmu ❓, lalu masuk gerbang yang tepat!';
     hp = MAX_HP; totalStars = 0; bossCorrect = 0;
     const first = Math.random() < 0.5 ? 'sugra' : 'kubra';
     caseSeq = [pickCase(first), pickCase(first === 'sugra' ? 'kubra' : 'sugra')];
@@ -612,14 +968,20 @@
 
   scheduleBGM();
 
-  // ---------- Input Keyboard & Mobile ----------
+  // ---------- Input Keyboard & Touch ----------
   const held = { left: false, right: false, jump: false };
   const keyMap = {
     ArrowLeft: 'left', a: 'left', A: 'left',
     ArrowRight: 'right', d: 'right', D: 'right',
     ArrowUp: 'jump', w: 'jump', W: 'jump', ' ': 'jump'
   };
+
   window.addEventListener('keydown', e => {
+    if (tutorialOpen) {
+      const k = keyMap[e.key];
+      if (k) { simHeld[k] = true; e.preventDefault(); }
+      return;
+    }
     if (!gameStarted) return;
     if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { togglePause(); return; }
     if (isPaused || modalOpen) return;
@@ -631,17 +993,24 @@
     const k = keyMap[e.key];
     if (k) { held[k] = true; e.preventDefault(); }
   });
+
   window.addEventListener('keyup', e => {
+    if (tutorialOpen) {
+      const k = keyMap[e.key];
+      if (k) { simHeld[k] = false; e.preventDefault(); }
+      return;
+    }
     const k = keyMap[e.key];
     if (k) { held[k] = false; if (!modalOpen) e.preventDefault(); }
   });
+
   function releaseAll() {
     held.left = held.right = held.jump = false;
     document.querySelectorAll('.pad-btn').forEach(b => b.classList.remove('active'));
   }
   window.addEventListener('blur', releaseAll);
 
-  document.querySelectorAll('.pad-btn').forEach(btn => {
+  document.querySelectorAll('#pad .pad-btn').forEach(btn => {
     const k = btn.dataset.key;
     const on = e => { e.preventDefault(); if (!gameStarted || modalOpen || isPaused) return; held[k] = true; btn.classList.add('active'); };
     const off = e => { e.preventDefault(); held[k] = false; btn.classList.remove('active'); };
@@ -672,6 +1041,7 @@
       okBtn.focus({ preventScroll: true });
     }));
   }
+
   function confirmModal() {
     if (!modalOpen) return;
     const cb = modalCb;
@@ -700,6 +1070,7 @@
     });
     sfx.open();
   }
+
   function hitBlock(b) {
     b.bump = 1;
     sfx.bump();
@@ -712,6 +1083,7 @@
     fb.textContent = text;
     fb.style.color = color;
   }
+
   function showCard() {
     $('c-area').textContent = 'Kartu Kasus • Area ' + (areaIdx + 1);
     $('c-title').textContent = caseData.judul;
@@ -720,6 +1092,7 @@
     setFeedback('Peristiwa ini termasuk kiamat sugra atau kubra? Masuklah ke gerbang yang tepat.', '#fde68a');
     cardEl.classList.add('show');
   }
+
   function openGates() {
     gatesOpen = true;
     showCard();
@@ -778,7 +1151,7 @@
     sfx.open();
   }
 
-  // ---------- Boss Battle & Timer ----------
+  // ---------- Boss Battle ----------
   function startBoss() {
     clearLater();
     mode = 'boss'; camX = 0;
@@ -786,7 +1159,6 @@
     scheduleBGM();
 
     padEl.style.display = 'none'; $('kbhelp').style.display = 'none';
-    $('hint').textContent = 'Boss Battle: Jawab dengan benar sebelum waktu habis untuk mengalahkan Bos!';
     cardEl.classList.remove('show');
     flashRGB = '167,139,250'; flashA = 0.9;
     bossReset();
@@ -801,9 +1173,7 @@
       if (!isPaused && mode === 'boss' && !won && !modalOpen && gameStarted) {
         bossTimer--;
         $('boss-timer-text').textContent = bossTimer;
-        if (bossTimer <= 10) {
-          sfx.bump();
-        }
+        if (bossTimer <= 10) sfx.bump();
         if (bossTimer <= 0) {
           clearInterval(bossInterval);
           handleBossTimeout();
@@ -818,7 +1188,7 @@
     showModal({
       badge: '⌛ Waktu Habis!',
       judul: 'Waktu Bertarung Habis!',
-      isi: 'Waktu untuk melawan Bos “Ragu & Lupa” telah habis. Tetap semangat dan coba lagi!',
+      isi: 'Waktu untuk melawan Bos “Terakhir” telah habis. Tetap semangat dan coba lagi!',
       sumber: '',
       tombol: 'Coba Lagi 🔄',
       onOk() { bossReset(); }
@@ -831,7 +1201,7 @@
     Object.assign(player, { x: 90, y: 410 - player.h, vx: 0, vy: 0, face: 1, kb: 0, inv: 0, hidden: false });
     hp = MAX_HP; bossCorrect = 0; laser = null; particles = []; popups = []; won = false; camX = 0;
     qList = shuffle(BOSS_Q); qi = 0;
-    popups.push({ x: 600, y: 120, t: 0, text: 'Bos “Ragu & Lupa” muncul!', color: '#fde68a' });
+    popups.push({ x: 600, y: 120, t: 0, text: 'Bos “Terakhir” muncul!', color: '#fde68a' });
     sfx.wrong();
     startBossTimer();
     showQuestion();
@@ -876,15 +1246,11 @@
       later(() => {
         if (boss.hp <= 0) {
           if (bossInterval) clearInterval(bossInterval);
-          // 1. Matikan musik dramatis & berganti ke musik calm di awal
           bgmMode = 'level';
           scheduleBGM();
-          
           boss.dying = 0.01; 
           sfx.boom();
-          // 2. Mainkan Sound Effect Kemenangan
           sfx.win();
-          
           later(bossWin, 1500);
         } else {
           qi++; showQuestion();
@@ -909,7 +1275,7 @@
               if (bossInterval) clearInterval(bossInterval);
               showModal({
                 badge: '💔 HP habis', judul: 'Bos masih berdiri. Coba lagi!',
-                isi: 'Baca kembali petunjuknya, lalu hadapi Bos “Ragu & Lupa” sekali lagi.',
+                isi: 'Baca kembali petunjuknya, lalu hadapi Bos “Terakhir” sekali lagi.',
                 sumber: '', tombol: 'Lawan Bos lagi',
                 onOk() { bossReset(); }
               });
@@ -932,12 +1298,13 @@
     sfx.win();
   }
 
-  // ---------- Respawing & Fall Logic ----------
+  // ---------- Respawn & Fall Logic ----------
   function respawn() {
     const c = cps.filter(k => k.on).pop();
     Object.assign(player, { x: c ? c.x : 50, y: 340, vx: 0, vy: 0, kb: 0, inv: 1.5, onGround: false });
     camX = Math.max(0, Math.min(worldW - W, player.x + player.w / 2 - W / 2));
   }
+
   function fall() {
     hp = Math.max(0, hp - 1);
     flashRGB = '220,38,38'; flashA = 0.6;
@@ -964,7 +1331,7 @@
   const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 
   function update(dt) {
-    if (!gameStarted || isPaused) return;
+    if (!gameStarted || isPaused || tutorialOpen) return;
     const locked = modalOpen || !!tele || dead;
     if (player.inv > 0) player.inv -= dt;
 
@@ -1058,7 +1425,7 @@
   }
 
   function bossTick(dt) {
-    if (isPaused) return;
+    if (isPaused || tutorialOpen) return;
     boss.shown += (boss.hp - boss.shown) * Math.min(1, dt * 6);
     boss.shake = Math.max(0, boss.shake - dt * 2.5);
     boss.hurt = Math.max(0, boss.hurt - dt * 3);
@@ -1093,20 +1460,18 @@
     }
   }
 
-  // ---------- Render & Visual Studio ----------
+  // ---------- Render System ----------
   function rr(x, y, w, h, r) {
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
   }
 
-  // Render Gerbang (Level 2 = Light Mode)
   function drawDoor(d, t) {
     let pal;
     if (areaIdx === 1) {
-      // Light Mode Palette khusus Level 2
       pal = d.type === 'sugra' 
-        ? ['#a7f3d0', '#34d399', '#065f46']  // Light Mint/Emerald
-        : ['#fef08a', '#facc15', '#854d0e']; // Light Amber/Gold
+        ? ['#a7f3d0', '#34d399', '#065f46']
+        : ['#fef08a', '#facc15', '#854d0e'];
     } else {
       pal = d.type === 'sugra' 
         ? ['#2dd4bf', '#0f766e', '#ffffff'] 
@@ -1145,7 +1510,6 @@
     }
     ctx.restore();
 
-    // Label Pintu
     ctx.fillStyle = areaIdx === 1 ? pal[2] : '#134e4a';
     ctx.font = 'bold 12px system-ui, sans-serif';
     ctx.textAlign = 'center';
@@ -1163,7 +1527,6 @@
     ctx.fill();
 
     if (playerGender === 'P') {
-      // Karakter Perempuan
       ctx.fillStyle = '#be185d';
       ctx.beginPath();
       ctx.moveTo(player.x + 2, player.y + 16);
@@ -1199,22 +1562,8 @@
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(cx + eyeOffsetX - 5 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
       ctx.fillRect(cx + eyeOffsetX + 3 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
-      
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(cx + eyeOffsetX - 6, player.y + 4, 4, 1);
-      ctx.fillRect(cx + eyeOffsetX + 2, player.y + 4, 4, 1);
-
-      ctx.fillStyle = '#fef08a';
-      ctx.beginPath();
-      ctx.arc(cx + (player.face === 1 ? -10 : 10), player.y, 4, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#d97706';
-      const bagX = player.face === 1 ? player.x - 5 : player.x + player.w - 1;
-      ctx.fillRect(bagX, player.y + 18, 6, 16);
 
     } else {
-      // Karakter Laki-laki
       ctx.fillStyle = '#059669';
       ctx.fillRect(player.x, player.y + 10, player.w, player.h - 10);
       ctx.fillStyle = '#047857';
@@ -1235,10 +1584,6 @@
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(cx + eyeOffsetX - 6 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
       ctx.fillRect(cx + eyeOffsetX + 3 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
-
-      ctx.fillStyle = '#b45309';
-      const bagX = player.face === 1 ? player.x - 5 : player.x + player.w - 1;
-      ctx.fillRect(bagX, player.y + 14, 6, 18);
     }
 
     ctx.restore();
@@ -1273,6 +1618,7 @@
     [x + 18, x + 112].forEach(wx => { rr(wx, b - 46, 20, 26, [10, 10, 0, 0]); ctx.fill(); });
   }
 
+  // BACKGROUND LEVEL 1 & LEVEL 2 (Diambil dari Kode Lama)
   function drawWorld(t) {
     const dusk = AREAS[areaIdx].dusk, L = LEVELS[areaIdx];
     const sky = ctx.createLinearGradient(0, 0, 0, H);
@@ -1403,7 +1749,7 @@
     ctx.restore();
   }
 
-  // Visual Latar Simulasi Hari Akhir (Boss Level)
+  // BACKGROUND LEVEL BOS DOOMSDAY (Diambil dari Kode Lama)
   function drawDoomsdayBackground(t) {
     const sky = ctx.createLinearGradient(0, 0, 0, H);
     sky.addColorStop(0, '#2a0808');
@@ -1413,13 +1759,13 @@
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
-    // Kilatan Takdir/Guncangan Kiamat
+    // Efek Kilatan Petir Merah
     if (Math.random() < 0.04) {
       ctx.fillStyle = 'rgba(254, 202, 202, 0.15)';
       ctx.fillRect(0, 0, W, H);
     }
 
-    // Gerhana Matahari Merah
+    // Matahari Kiamat/Doomsday
     const sx = W / 2, sy = 120;
     const sg = ctx.createRadialGradient(sx, sy, 10, sx, sy, 110);
     sg.addColorStop(0, 'rgba(239, 68, 68, 0.8)');
@@ -1436,7 +1782,7 @@
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Siluet Gunung Beterbangan & Hancur
+    // Siluet Gunung Kehancuran
     ctx.fillStyle = '#1c0a0a';
     ctx.beginPath();
     ctx.moveTo(0, H);
@@ -1448,7 +1794,7 @@
     ctx.closePath();
     ctx.fill();
 
-    // Hujan Debu Api / Meteor
+    // Efek Percikan Api / Partikel Bara Berpijar
     for (let i = 0; i < 35; i++) {
       const mx = (i * 37 + t * 0.12) % (W + 100) - 50;
       const my = (i * 53 + t * 0.25) % (H + 50) - 20;
@@ -1461,10 +1807,11 @@
     }
     ctx.globalAlpha = 1;
 
-    // Tanah Retak Berlava
+    // Tanah Pijakan
     ctx.fillStyle = '#0f0505';
     ctx.fillRect(0, 410, W, 40);
 
+    // Retakan Lahar Panas
     ctx.strokeStyle = '#f97316';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -1479,6 +1826,7 @@
     ctx.fillRect(0, 410, W, 4);
   }
 
+  // RENDER ARENA BOS (Menggunakan Background Doomsday Lengkap)
   function drawBoss(t) {
     drawDoomsdayBackground(t);
 
@@ -1510,14 +1858,13 @@
 
     if (!player.hidden) drawPlayer(t, player.inv > 0 && Math.floor(t / 80) % 2 ? 0.35 : 1);
 
-    // Bar HP Bos
     const bw = 300, bxl = W / 2 - bw / 2;
     ctx.fillStyle = 'rgba(15,10,40,0.85)';
     ctx.fillRect(bxl - 10, 10, bw + 20, 50);
     ctx.fillStyle = '#ede9fe';
     ctx.font = 'bold 14px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('👾 Ragu & Lupa • ' + Math.round(boss.hp) + '%', W / 2, 26);
+    ctx.fillText('👾 Bos Terakhir • ' + Math.round(boss.hp) + '%', W / 2, 26);
     ctx.fillStyle = '#4c1d95';
     ctx.fillRect(bxl, 38, bw, 14);
     ctx.fillStyle = boss.hp > 50 ? '#ef4444' : '#f97316';
@@ -1546,10 +1893,8 @@
       ctx.fillText(p.text, Math.max(camX + tw / 2 + 8, Math.min(camX + W - tw / 2 - 8, p.x)), p.y);
     }
     ctx.globalAlpha = 1;
-
     ctx.restore();
 
-    // HUD Status Pemain
     ctx.font = 'bold 15px system-ui, sans-serif';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(15,42,36,0.85)';
@@ -1571,7 +1916,7 @@
       ctx.fillText(icon + ' ' + playerName, 20, 28);
       ctx.fillText('📖 ' + got + '/' + books.length, 125, 28);
       ctx.fillText('⭐ ' + starsHere + '/' + blocks.length, 195, 28);
-      ctx.fillText('❤️️'.repeat(hp) + '🖤'.repeat(MAX_HP - hp), 265, 28);
+      ctx.fillText('❤'.repeat(hp) + '🖤'.repeat(MAX_HP - hp), 265, 28);
 
       const label = 'Area ' + (areaIdx + 1) + ': ' + AREAS[areaIdx].nama;
       const lw = ctx.measureText(label).width;
@@ -1587,7 +1932,6 @@
       ctx.fillRect(0, 0, W, H);
     }
 
-    // Layar Hasil Akhir (Sertifikat Skor)
     if (won) {
       ctx.fillStyle = 'rgba(15,42,36,0.94)';
       ctx.fillRect(0, 0, W, H);
@@ -1603,7 +1947,7 @@
 
       ctx.font = '15px system-ui, sans-serif';
       ctx.fillStyle = 'rgba(236,253,245,.9)';
-      ctx.fillText('Bos “Ragu & Lupa” telah berhasil dikalahkan. Alhamdulillah!', W / 2, 122);
+      ctx.fillText('Bos “Terakhir” telah berhasil dikalahkan. Alhamdulillah!', W / 2, 122);
 
       const rows = [
         ['⭐ Bintang ilmu', totalStars + ' × ' + SCORE.star, totalStars * SCORE.star],
@@ -1643,7 +1987,7 @@
     timeScale += ((modalOpen ? MODAL_TIME_SCALE : 1) - timeScale) * Math.min(1, raw * 6);
     
     if (mode === 'boss') bossTick(raw);
-    else if (!won && gameStarted && !isPaused) update(raw * timeScale);
+    else if (!won && gameStarted && !isPaused && !tutorialOpen) update(raw * timeScale);
     
     tickFx(raw);
     draw(now);
