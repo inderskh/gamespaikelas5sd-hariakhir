@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Petualangan PAI by Indra Riskiah</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  html, body { min-height: 100%; overscroll-behavior: none; }
+  body { background: #0f2a24; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  canvas { image-rendering: auto; touch-action: none; }
+  .pad-btn { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .pad-btn.active { background: #f5c451; color: #123; transform: scale(0.94); }
+
+  #modal { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 1rem; }
+  #modal.open { display: flex; }
+  #modal .m-backdrop { position: absolute; inset: 0; background: rgba(6, 30, 24, .35);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transition: opacity .3s; }
+  #modal .m-card { position: relative; width: 100%; max-width: 28rem; max-height: 92vh; overflow-y: auto; background: rgba(255, 255, 255, .12);
+    -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, .28);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .25);
+    opacity: 0; transform: translateY(16px) scale(.96); transition: opacity .3s, transform .3s; }
+  #modal.show .m-backdrop { opacity: 1; }
+  #modal.show .m-card { opacity: 1; transform: none; }
+  #m-arab { font-family: "Traditional Arabic", "Amiri", "Noto Naskh Arabic", "Scheherazade New", serif; }
+
+  #case-card { position: absolute; left: 0; right: 0; top: 11%; display: flex; justify-content: center; padding: 0 .5rem;
+    pointer-events: none; opacity: 0; transform: translateY(-8px); transition: opacity .3s, transform .3s; }
+  #case-card.show { opacity: 1; transform: none; }
+  #case-card .c-inner { width: 100%; max-width: 24rem; padding: .6rem .8rem; border-radius: 1rem; color: #ecfdf5;
+    background: rgba(6, 40, 32, .58); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, .28); box-shadow: 0 10px 30px rgba(0, 0, 0, .3); }
+
+  /* Panel Kuis Boss */
+  #quiz { display: none; }
+  #quiz.open { display: block; }
+  .opt { text-align: left; border: 2px solid rgba(255,255,255,.25); background: rgba(255,255,255,.08); transition: background .2s, border-color .2s; }
+  .opt:hover:not(:disabled) { background: rgba(245,196,81,.25); border-color: #f5c451; }
+  .opt.ok { background: rgba(16,185,129,.55); border-color: #6ee7b7; }
+  .opt.bad { background: rgba(220,38,38,.55); border-color: #fca5a5; }
+  .opt:disabled { cursor: default; }
+
+  /* Kartu Gender Menu */
+  .gender-card.selected {
+    border-color: #f5c451 !important;
+    background-color: rgba(245, 196, 81, 0.2) !important;
+  }
+</style>
+</head>
+<body class="min-h-full flex flex-col items-center justify-center gap-3 p-3 text-emerald-50">
+
+  <!-- Overlay Menu Awal (Lobby) -->
+  <div id="start-menu" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-md">
+    <div class="w-full max-w-md rounded-3xl border border-emerald-500/30 bg-emerald-900/80 p-6 text-emerald-50 shadow-2xl backdrop-blur-xl">
+      <div class="text-center">
+        <span class="inline-block rounded-2xl bg-amber-400/20 px-3 py-1 text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">
+          Game Edukasi PAI
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-amber-300 tracking-tight">Petualangan PAI</h2>
+        <p class="mt-1 text-xs sm:text-sm text-emerald-200/80">
+          Isi nama & pilih karaktermu sebelum memulai petualangan ilmu!
+        </p>
+      </div>
+
+      <form id="menu-form" class="mt-5 space-y-4" onsubmit="return false;">
+        <!-- Input Nama -->
+        <div>
+          <label for="player-name-input" class="block text-xs font-bold text-amber-200 uppercase tracking-wide mb-1">
+            Nama Pemain
+          </label>
+          <input 
+            type="text" 
+            id="player-name-input" 
+            placeholder="Masukkan nama kamu..." 
+            maxlength="18"
+            required
+            class="w-full rounded-2xl border border-emerald-600/60 bg-emerald-950/80 px-4 py-2.5 text-sm text-emerald-50 placeholder-emerald-400/50 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 transition"
+          />
+        </div>
+
+        <!-- Pilih Jenis Kelamin -->
+        <div>
+          <label class="block text-xs font-bold text-amber-200 uppercase tracking-wide mb-2">
+            Pilih Jenis Kelamin (Karakter)
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <div id="card-gender-l" class="gender-card selected relative flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-emerald-600/60 bg-emerald-950/60 cursor-pointer transition hover:bg-emerald-800/50">
+              <input type="radio" name="gender-opt" value="L" class="sr-only" checked />
+              <span class="text-3xl mb-1">👦</span>
+              <span class="text-xs font-bold text-emerald-100">Laki-laki</span>
+              <span class="text-[10px] text-emerald-300/70">Peci & Baju Hijau</span>
+            </div>
+
+            <div id="card-gender-p" class="gender-card relative flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-emerald-600/60 bg-emerald-950/60 cursor-pointer transition hover:bg-emerald-800/50">
+              <input type="radio" name="gender-opt" value="P" class="sr-only" />
+              <span class="text-3xl mb-1">🧕</span>
+              <span class="text-xs font-bold text-emerald-100">Perempuan</span>
+              <span class="text-[10px] text-emerald-300/70">Kerudung & Gamis</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tombol Start Game -->
+        <button 
+          type="button" 
+          id="btn-start-game"
+          class="w-full rounded-2xl bg-amber-400 py-3.5 text-base font-bold text-emerald-950 shadow-lg transition hover:bg-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-300/50 active:scale-[0.98] mt-2"
+        >
+          🚀 Start Game (Mulai)
+        </button>
+      </form>
+
+      <div class="mt-4 text-center text-[11px] text-emerald-300/60">
+        Karya Indra Riskiah • Modul Pembelajaran Interaktif PAI
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay Pause Menu -->
+  <div id="pause-menu" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-emerald-950/80 backdrop-blur-md">
+    <div class="w-full max-w-sm rounded-3xl border border-emerald-500/40 bg-emerald-900/90 p-6 text-center text-emerald-50 shadow-2xl">
+      <div class="text-4xl mb-2">⏸️</div>
+      <h2 class="text-2xl font-bold text-amber-300">Permainan Di-Pause</h2>
+      <p class="mt-1 text-xs text-emerald-200/80">Istirahat sejenak sebelum melanjutkan petualangan!</p>
+      
+      <div class="mt-6 flex flex-col gap-3">
+        <button id="btn-resume" class="w-full rounded-2xl bg-amber-400 py-3 font-bold text-emerald-950 shadow transition hover:bg-amber-300">
+          ▶️ Lanjut (Resume)
+        </button>
+        <button id="btn-restart-area" class="w-full rounded-2xl bg-emerald-800 border border-emerald-600/80 py-3 font-bold text-emerald-100 transition hover:bg-emerald-700">
+          🔄 Ulangi Area Ini
+        </button>
+        <button id="btn-home-menu" class="w-full rounded-2xl bg-red-800/80 border border-red-600/80 py-3 font-bold text-red-100 transition hover:bg-red-700">
+          🏠 Kembali ke Lobby (Home)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header & Kontrol Navigasi Top Bar -->
+  <header class="text-center w-full max-w-3xl flex flex-col items-center">
+    <div class="w-full flex items-center justify-between px-2 mb-1">
+      <button id="btn-home-top" class="rounded-xl border border-emerald-600 bg-emerald-800/80 px-3 py-1.5 text-xs font-semibold hover:bg-emerald-700 transition" title="Kembali ke Lobby Utama">
+        🏠 Home
+      </button>
+      <h1 class="text-lg sm:text-2xl font-bold tracking-tight">Petualangan PAI 📖</h1>
+      <div class="flex gap-2">
+        <button id="btn-pause-top" class="rounded-xl border border-amber-600/80 bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 transition" title="Pause Game">
+          ⏸️ Pause
+        </button>
+        <button id="mute" class="rounded-xl border border-emerald-600 bg-emerald-800/80 px-3 py-1.5 text-xs" aria-pressed="false">
+          🔊 Suara
+        </button>
+      </div>
+    </div>
+    <p id="hint" class="text-xs sm:text-sm text-emerald-200/80">Lompati jurang, kumpulkan mushaf, sundul Balok Ilmu ❓, lalu masuk gerbang yang tepat!</p>
+  </header>
+
+  <main class="w-full max-w-3xl">
+    <div class="relative">
+      <canvas id="game" class="block w-full rounded-xl border-2 border-emerald-700 bg-sky-200 shadow-lg"></canvas>
+      <aside id="case-card" aria-live="polite">
+        <div class="c-inner">
+          <p id="c-area" class="text-[10px] font-semibold text-amber-200 sm:text-xs"></p>
+          <h3 id="c-title" class="text-sm font-bold sm:text-base"></h3>
+          <p id="c-isi" class="mt-0.5 text-[11px] leading-snug sm:text-xs"></p>
+          <p id="c-legend" class="mt-1 text-[10px] text-emerald-200/80 sm:text-xs"></p>
+          <p id="c-fb" class="mt-1 text-[11px] font-semibold sm:text-xs"></p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Panel soal Boss Battle -->
+    <section id="quiz" class="mt-3 rounded-2xl border border-white/25 bg-emerald-950/70 p-4 shadow-xl" aria-live="polite">
+      <div class="flex justify-between items-center mb-1">
+        <p id="q-num" class="text-xs font-semibold text-amber-200"></p>
+        <div id="boss-timer-badge" class="rounded-full bg-red-950/80 border border-red-500/60 px-3 py-0.5 text-xs font-bold text-red-300 animate-pulse">
+          ⏳ Waktu: <span id="boss-timer-text">60</span>s
+        </div>
+      </div>
+      <h2 id="q-text" class="mt-1 text-base font-bold leading-snug sm:text-lg"></h2>
+      <div id="q-opts" class="mt-3 grid gap-2 sm:grid-cols-2"></div>
+    </section>
+
+    <p id="kbhelp" class="mt-2 text-center text-xs text-emerald-200/70">
+      Keyboard: ← → / A D (gerak), Spasi / ↑ / W (lompat), P / Esc (pause), R (ulang).
+    </p>
+  </main>
+
+  <nav id="pad" class="w-full max-w-3xl flex items-center justify-between px-2 pb-2" aria-label="Kontrol layar sentuh">
+    <div class="flex gap-3">
+      <button class="pad-btn w-20 h-20 rounded-2xl bg-emerald-800 text-3xl font-bold border-2 border-emerald-600" data-key="left" aria-label="Kiri">◀</button>
+      <button class="pad-btn w-20 h-20 rounded-2xl bg-emerald-800 text-3xl font-bold border-2 border-emerald-600" data-key="right" aria-label="Kanan">▶</button>
+    </div>
+    <button class="pad-btn w-24 h-24 rounded-full bg-emerald-800 text-lg font-bold border-2 border-emerald-600" data-key="jump" aria-label="Lompat">▲<br>Lompat</button>
+  </nav>
+
+  <div id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title" aria-hidden="true">
+    <div class="m-backdrop"></div>
+    <section class="m-card rounded-3xl p-6 text-emerald-50">
+      <p id="m-badge" class="inline-flex items-center gap-2 rounded-full bg-amber-300/20 px-3 py-1 text-xs font-semibold text-amber-200"></p>
+      <h2 id="m-title" class="mt-3 text-xl font-bold"></h2>
+      <p id="m-arab" dir="rtl" lang="ar" class="mt-4 rounded-2xl bg-black/20 px-4 py-3 text-right text-2xl leading-loose"></p>
+      <p id="m-arti" class="mt-3 text-sm italic text-emerald-100"></p>
+      <p id="m-refleksi" class="mt-3 text-sm leading-relaxed text-emerald-50/90"></p>
+      <p id="m-sumber" class="mt-3 text-xs text-emerald-200/70"></p>
+      <button id="m-ok" class="mt-5 w-full rounded-2xl bg-amber-300 py-3 text-base font-bold text-emerald-950 shadow-lg transition hover:bg-amber-200 focus:outline-none focus:ring-4 focus:ring-amber-200/60"></button>
+    </section>
+  </div>
+
+<script>
+(() => {
+  const W = 800, H = 450;
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.aspectRatio = W + ' / ' + H;
+  ctx.scale(dpr, dpr);
+
+  // ---------- Status & Pengaturan Game ----------
+  let gameStarted = false;
+  let isPaused = false;
+  let playerName = 'Petualang';
+  let playerGender = 'L'; // 'L' atau 'P'
+
+  const SPEED = 260, JUMP = 650, GRAVITY = 1600, MAX_FALL = 900;
+  const MODAL_TIME_SCALE = 0.15;
+  const KB_SPEED = 300;
+  const MAX_HP = 3;
+  const LOCK_GATES = true;
+  const BOSS_DMG = 25;
+  const SCORE = { star: 100, correct: 50, hp: 150 };
+
+  // Status Timer Boss
+  let bossTimer = 60;
+  let bossInterval = null;
+
+  // ---------- Data Level ----------
+  const LEVELS = [
+    { w: 2800, mosque: 2440, cps: [720, 1400, 2040],
+      ground: [[0, 560], [680, 520], [1340, 480], [1980, 820]],
+      plat: [[150,335,140],[420,270,110],[800,320,130],[1000,260,120],[1420,335,140],[1700,290,110],[2100,335,140]],
+      books: [[220,300],[475,235],[620,330],[865,285],[1270,320],[1490,300],[1755,255],[2170,300]],
+      signs: [[435,'Iman kepada Hari Akhir: rukun iman ke-5'],[1080,'Kiamat sugra = kiamat kecil'],[1620,'Kiamat kubra = kiamat besar'],[2280,'Waktu kiamat hanya Allah yang tahu']] },
+    { w: 2400, mosque: 2060, cps: [660, 1340, 1920],
+      ground: [[0, 500], [640, 560], [1320, 420], [1900, 500]],
+      plat: [[160,335,140],[400,280,100],[760,320,130],[1000,265,120],[1400,335,140],[1620,290,110]],
+      books: [[230,300],[570,330],[810,285],[1060,230],[1260,320],[1450,300],[1675,255],[1820,330]],
+      signs: [[420,'Perbanyak amal saleh sebelum terlambat'],[900,'Setiap perbuatan dipertanggungjawabkan'],[1560,'Jujurlah, Allah Maha Melihat']] }
+  ];
+
+  // ---------- Materi Balok Ilmu ----------
+  const lessons = [
+    { judul: 'Niat yang Lurus',
+      arab: 'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ',
+      arti: 'Sesungguhnya setiap amal bergantung pada niatnya.',
+      refleksi: 'Kuliah, mengerjakan tugas, atau membantu teman sekelompok bernilai ibadah jika diniatkan karena Allah, bukan sekadar demi nilai.',
+      sumber: 'HR. Bukhari dan Muslim' },
+    { judul: 'Membaca adalah Perintah Pertama',
+      arab: 'اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ',
+      arti: 'Bacalah dengan (menyebut) nama Tuhanmu yang menciptakan.',
+      refleksi: 'Membaca modul, jurnal, atau artikel yang bermanfaat sebelum scroll tanpa arah adalah cara sederhana mengamalkan ayat ini.',
+      sumber: 'QS. Al-‘Alaq [96]: 1' },
+    { judul: 'Ilmu Meninggikan Derajat',
+      arab: 'يَرْفَعِ اللَّهُ الَّذِينَ آمَنُوا مِنكُمْ وَالَّذِينَ أُوتُوا الْعِلْمَ دَرَجَاتٍ',
+      arti: 'Allah akan meninggikan orang-orang beriman di antara kamu dan orang-orang yang diberi ilmu beberapa derajat.',
+      refleksi: 'Ilmu yang dibagikan, misalnya belajar bareng sebelum ujian, lebih bernilai daripada sekadar gelar di belakang nama.',
+      sumber: 'QS. Al-Mujadilah [58]: 11' },
+    { judul: 'Sabar dalam Proses',
+      arab: 'إِنَّ اللَّهَ مَعَ الصَّابِرِينَ',
+      arti: 'Sesungguhnya Allah beserta orang-orang yang sabar.',
+      refleksi: 'Revisi berkali-kali memang melelahkan. Sabar berarti tetap berikhtiar tanpa berhenti di tengah jalan.',
+      sumber: 'QS. Al-Baqarah [2]: 153' },
+    { judul: 'Setiap yang Bernyawa Akan Mati',
+      arab: 'كُلُّ نَفْسٍ ذَائِقَةُ الْمَوْتِ',
+      arti: 'Setiap yang bernyawa akan merasakan mati.',
+      refleksi: 'Kematian seseorang disebut kiamat sugra (kiamat kecil). Ingatan ini membuat kita tidak menunda salat, minta maaf, atau berbakti.',
+      sumber: 'QS. Ali ‘Imran [3]: 185' },
+    { judul: 'Guncangan Kiamat Itu Dahsyat',
+      arab: 'يَا أَيُّهَا النَّاسُ اتَّقُوا رَبَّكُمْ إِنَّ زَلْزَلَةَ السَّاعَةِ شَيْءٌ عَظِيمٌ',
+      arti: 'Wahai manusia, bertakwalah kepada Tuhanmu. Sesungguhnya guncangan hari kiamat itu adalah kejadian yang sangat besar.',
+      refleksi: 'Kiamat kubra adalah hancurnya seluruh alam semesta. Iman pada hari akhir mendorong kita berhati-hati dalam bertindak.',
+      sumber: 'QS. Al-Hajj [22]: 1' }
+  ];
+
+  // ---------- Kartu Kasus ----------
+  const CASES = [
+    { jawab: 'sugra', judul: 'Tsunami di Aceh (2004)',
+      isi: 'Gelombang raksasa menerjang pesisir Aceh dan menelan banyak korban, sementara wilayah lain di dunia berjalan seperti biasa.',
+      penjelasan: 'Bencana alam yang merusak sebagian wilayah termasuk kiamat sugra (kerusakan/kematian yang bersifat terbatas).',
+      sumber: '' },
+    { jawab: 'sugra', judul: 'Gempa dan Likuefaksi di Palu (2018)',
+      isi: 'Gempa bumi merusak permukiman di Sulawesi Tengah, tetapi kehidupan di luar wilayah itu masih berlanjut.',
+      penjelasan: 'Peristiwa ini berskala lokal dan tidak memusnahkan seluruh alam, sehingga termasuk kiamat sugra.',
+      sumber: '' },
+    { jawab: 'sugra', judul: 'Wafatnya Seorang Kakek',
+      isi: 'Seorang kakek wafat setelah sakit. Bagi dirinya, kehidupan dunia telah berakhir, tetapi kehidupan orang lain tetap berjalan.',
+      penjelasan: 'Kematian seseorang termasuk kiamat sugra, karena berakhirnya dunia hanya dialami oleh yang meninggal.',
+      sumber: 'QS. Ali ‘Imran [3]: 185' },
+    { jawab: 'kubra', judul: 'Sangkakala Pertama Ditiup',
+      isi: 'Malaikat Israfil meniup sangkakala. Seluruh makhluk di langit dan di bumi binasa, kecuali yang dikehendaki Allah.',
+      penjelasan: 'Kehancuran total seluruh alam semesta disebut kiamat kubra (kiamat besar).',
+      sumber: 'QS. Az-Zumar [39]: 68' },
+    { jawab: 'kubra', judul: 'Gunung Beterbangan, Langit Terbelah',
+      isi: 'Gunung-gunung menjadi seperti bulu yang dihambur-hamburkan, langit terbelah, dan matahari digulung.',
+      penjelasan: 'Rusaknya tatanan langit dan bumi secara menyeluruh adalah tanda kiamat kubra.',
+      sumber: 'QS. Al-Qari‘ah [101]: 5; At-Takwir [81]: 1; Al-Infitar [82]: 1' }
+  ];
+
+  // ---------- Soal Boss Battle ----------
+  const BOSS_Q = [
+    { q: 'Hari Akhir merupakan ....', o: ['hari dimulainya kehidupan manusia', 'hari berakhirnya kehidupan makhluk di dunia', 'hari ketika manusia mendapatkan harta', 'hari ketika manusia pergi mencari pekerjaan'], a: 1,
+      h: 'Hari akhir atau Hari Kiamat adalah peristiwa berakhirnya kehidupan makhluk di dunia.' },
+    { q: 'Beriman kepada Hari Akhir merupakan rukun iman yang ke ....', o: ['tiga', 'empat', 'lima', 'enam'], a: 2,
+      h: 'Urutan rukun iman: Allah, malaikat, kitab, rasul, hari akhir (kelima), qada dan qadar.' },
+    { q: 'Peristiwa seseorang meninggal dunia termasuk ....', o: ['Kiamat Kubra', 'Kiamat Sugra', 'Yaumul Mizan', 'Yaumul Jaza'], a: 1,
+      h: 'Kiamat Sugra adalah berakhirnya kehidupan seseorang atau sebagian makhluk hidup.' },
+    { q: 'Peristiwa hancurnya seluruh alam semesta dan seluruh isinya disebut ....', o: ['Kiamat Sugra', 'Yaumul Ba’as', 'Kiamat Kubra', 'Yaumul Hisab'], a: 2,
+      h: 'Kiamat Kubra (kiamat besar) adalah hancurnya seluruh alam semesta beserta isinya.' },
+    { q: 'Reno mengetahui bahwa waktu terjadinya Kiamat hanya diketahui oleh Allah Swt. Sikap yang tepat adalah ....', o: ['berhenti belajar karena Kiamat akan segera datang', 'terus menghitung tanggal terjadinya Kiamat', 'mempersiapkan bekal dengan amal ibadah dan amal saleh', 'tidak perlu berbuat baik karena semua akan berakhir'], a: 2,
+      h: 'Tidak ada yang tahu kapan Kiamat terjadi selain Allah. Yang perlu disiapkan manusia adalah bekal amal ibadah dan amal saleh.' },
+    { q: 'Hari ketika seluruh manusia dibangkitkan kembali disebut ....', o: ['Yaumul Ba’as', 'Yaumul Mahsyar', 'Yaumul Hisab', 'Yaumul Mizan'], a: 0,
+      h: 'Ba’as berarti kebangkitan. Mahsyar adalah hari dikumpulkan, Hisab hari perhitungan, Mizan hari penimbangan.' },
+    { q: 'Hari ketika amal baik dan amal buruk manusia diperhitungkan disebut ....', o: ['Yaumul Mahsyar', 'Yaumul Hisab', 'Yaumul Ba’as', 'Yaumul Jaza'], a: 1,
+      h: 'Hisab berarti perhitungan. Pada hari itu amal manusia dihitung.' },
+    { q: 'Pada Yaumul Mizan, manusia akan ....', o: ['dikumpulkan di suatu tempat', 'dibangkitkan dari kubur', 'mendapatkan balasan', 'ditimbang catatan amal baik dan amal buruknya'], a: 3,
+      h: 'Mizan berarti timbangan catatan amal baik dan buruk.' },
+    { q: 'Ketika mendapatkan musibah, seorang muslim dianjurkan mengucapkan ....', o: ['Alhamdulillah saja', 'Allahu Akbar', 'Inna lillahi wa inna ilaihi raji’un', 'Subhanallah wa bihamdih'], a: 2,
+      h: 'Kalimat tarji’ (Inna lillahi...) dianjurkan saat mendengar musibah atau kematian.' },
+    { q: 'Salah satu hikmah beriman kepada Hari Akhir adalah ....', o: ['bebas berbuat apa saja', 'tidak perlu memikirkan perbuatan sendiri', 'memperbanyak amal ibadah dan berhati-hati dalam bertindak', 'hanya mengejar kesenangan dunia'], a: 2,
+      h: 'Orang beriman mawas diri, memperbanyak amal, dan berakhlak terpuji.' }
+  ];
+
+  const AREAS = [
+    { nama: 'Padang Ilmu',   dusk: false, sky: ['#7dd3fc', '#bfe6f5', '#f4f0d0'], blocks: [[203, 217, 0], [845, 202, 1], [1473, 217, 2], [2153, 217, 3]] },
+    { nama: 'Lembah Hikmah', dusk: true,  sky: ['#2b1450', '#c2410c', '#fdba74'], blocks: [[213, 217, 4], [1043, 147, 5]] }
+  ];
+
+  const player = { x: 50, y: 350, w: 32, h: 44, vx: 0, vy: 0, onGround: false, face: 1, kb: 0, inv: 0, hidden: false };
+  let books = [], blocks = [], doors = [], popups = [], particles = [];
+  let areaIdx = 0, caseSeq = [], caseData = null;
+  let hp = MAX_HP, totalStars = 0, areaStartStars = 0;
+  let won = false, dead = false, gatesOpen = false, tele = null;
+  let modalOpen = false, modalCb = null;
+  let flashA = 0, flashRGB = '255,255,255', lockCd = 0;
+  let camX = 0, worldW = 800, platforms = [], pits = [], cps = [];
+
+  // Status Boss Battle
+  let mode = 'world'; // 'world' | 'boss'
+  const boss = { hp: 100, shown: 100, shake: 0, dying: 0, hurt: 0, atk: 0 };
+  let laser = null, qList = [], qi = 0, curQ = null, qLocked = true, bossCorrect = 0, timers = [];
+  let finalScore = 0;
+
+  const $ = id => document.getElementById(id);
+  const modalEl = $('modal'), okBtn = $('m-ok'), cardEl = $('case-card');
+  const quizEl = $('quiz'), padEl = $('pad'), pauseEl = $('pause-menu');
+  const startMenuEl = $('start-menu'), btnStartGame = $('btn-start-game'), nameInput = $('player-name-input');
+
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+  const clearLater = () => { timers.forEach(clearTimeout); timers = []; };
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pickCase = type => {
+    const pool = CASES.filter(c => c.jawab === type);
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
+  // ---------- WebAudio Background Music System ----------
+  let audioCtx = null, muted = false;
+  let bgmStep = 0, bgmMode = 'menu', bgmTimeout = null;
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function tone(freq, at, dur, type, vol, slideTo) {
+    if (muted || !audioCtx) return;
+    try {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      const t = audioCtx.currentTime + at;
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(10, slideTo), t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t + dur + 0.05);
+    } catch(e) {}
+  }
+
+  function playBGMStep() {
+    if (muted || !audioCtx || isPaused) return;
+
+    if (bgmMode === 'menu' || bgmMode === 'level') {
+      // Drone Tangga Nada Hijaz (Root: D3 = 146.83Hz, Fifth: A3 = 220Hz)
+      if (bgmStep % 8 === 0) {
+        tone(146.83, 0, 1.8, 'sine', 0.035);
+        tone(220.00, 0, 1.8, 'sine', 0.02);
+      }
+      
+      // Melodi Lembut Timur Tengah (Hijaz D: D3, Eb3, F#3, G3, A3, Bb3, C4, D4)
+      const hijazMelody = [
+        293.66, 311.13, 369.99, 392.00, 440.00, 369.99, 311.13, 293.66,
+        220.00, 293.66, 311.13, 369.99, 440.00, 466.16, 440.00, 369.99,
+        392.00, 440.00, 523.25, 440.00, 369.99, 311.13, 293.66, 220.00,
+        146.83, 220.00, 293.66, 311.13, 293.66, 220.00, 185.00, 146.83
+      ];
+      
+      const note = hijazMelody[bgmStep % hijazMelody.length];
+      tone(note, 0, 0.32, 'triangle', 0.03);
+      
+      // Ritmik Gendang/Frame Drum Halus
+      if (bgmStep % 2 === 0) {
+        tone(85, 0, 0.07, 'sine', 0.035, 40);
+      } else if (bgmStep % 4 === 3) {
+        tone(350, 0, 0.04, 'triangle', 0.015, 90);
+      }
+
+    } else if (bgmMode === 'boss') {
+      // Musik Dramatis Fase Bos (Tempo cepat, nada tegang phrygian)
+      if (bgmStep % 2 === 0) {
+        tone(65.41, 0, 0.14, 'sawtooth', 0.06, 35);
+      } else {
+        tone(73.42, 0, 0.14, 'square', 0.05, 40);
+      }
+
+      const bossMelody = [
+        261.63, 277.18, 311.13, 261.63, 349.23, 311.13, 277.18, 261.63,
+        523.25, 493.88, 466.16, 440.00, 415.30, 392.00, 369.99, 349.23
+      ];
+      tone(bossMelody[bgmStep % bossMelody.length], 0, 0.1, 'sawtooth', 0.04);
+      tone(1100, 0, 0.03, 'square', 0.02, 180);
+
+      if (bgmStep % 4 === 2) {
+        tone(160, 0, 0.18, 'sawtooth', 0.07, 45);
+      }
+    }
+
+    bgmStep++;
+  }
+
+  function scheduleBGM() {
+    if (bgmTimeout) clearTimeout(bgmTimeout);
+    if (!muted && audioCtx && !isPaused) {
+      playBGMStep();
+    }
+    const speed = (bgmMode === 'boss') ? 170 : 320;
+    bgmTimeout = setTimeout(scheduleBGM, speed);
+  }
+
+  const sfx = {
+    bump() { tone(200, 0, 0.12, 'square', 0.10, 90); },
+    open() { tone(523, 0, 0.12, 'triangle', 0.14); tone(784, 0.09, 0.2, 'triangle', 0.14); },
+    star() {
+      [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, i * 0.08, i === 3 ? 0.4 : 0.14, 'triangle', 0.14));
+      tone(3136, 0.3, 0.3, 'sine', 0.05);
+    },
+    // Sound Effect Kemenangan saat Bos Kalah
+    win() {
+      [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, i) => {
+        tone(f, i * 0.1, 0.35, 'triangle', 0.16);
+      });
+      tone(2093, 0.6, 0.8, 'sine', 0.2);
+    },
+    gate() { tone(660, 0, 0.12, 'triangle', 0.12); tone(990, 0.1, 0.25, 'triangle', 0.12); },
+    wrong() { tone(300, 0, 0.25, 'sawtooth', 0.10, 110); tone(150, 0.1, 0.25, 'square', 0.08, 70); },
+    portal() {
+      tone(300, 0, 0.7, 'sine', 0.14, 1800);
+      [784, 988, 1319, 1760].forEach((f, i) => tone(f, 0.25 + i * 0.09, 0.3, 'triangle', 0.10));
+    },
+    laser() { tone(1800, 0, 0.35, 'sawtooth', 0.09, 300); },
+    hit() { tone(140, 0, 0.3, 'square', 0.14, 50); tone(90, 0.05, 0.3, 'sawtooth', 0.1, 40); },
+    boom() { tone(220, 0, 0.9, 'sawtooth', 0.14, 30); [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.5 + i * 0.1, 0.3, 'triangle', 0.12)); }
+  };
+
+  ['pointerdown', 'keydown', 'click'].forEach(ev => window.addEventListener(ev, ensureAudio, { passive: true }));
+
+  const muteBtn = $('mute');
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    muteBtn.textContent = muted ? '🔇 Suara Off' : '🔊 Suara On';
+    muteBtn.setAttribute('aria-pressed', String(muted));
+    muteBtn.blur();
+  });
+
+  // ---------- Menu & Mekanik Pause/Resume/Home ----------
+  function togglePause() {
+    if (!gameStarted || won) return;
+    isPaused = !isPaused;
+    if (isPaused) {
+      releaseAll();
+      pauseEl.classList.remove('hidden');
+      pauseEl.classList.add('flex');
+    } else {
+      pauseEl.classList.add('hidden');
+      pauseEl.classList.remove('flex');
+      scheduleBGM();
+    }
+  }
+
+  function resumeGame() {
+    isPaused = false;
+    pauseEl.classList.add('hidden');
+    pauseEl.classList.remove('flex');
+    scheduleBGM();
+  }
+
+  function goHome() {
+    isPaused = false;
+    gameStarted = false;
+    if (bossInterval) clearInterval(bossInterval);
+    pauseEl.classList.add('hidden');
+    pauseEl.classList.remove('flex');
+    quizEl.classList.remove('open');
+    modalOpen = false;
+    modalEl.classList.remove('show', 'open');
+    startMenuEl.style.display = 'flex';
+    bgmMode = 'menu';
+    scheduleBGM();
+  }
+
+  $('btn-pause-top').addEventListener('click', togglePause);
+  $('btn-home-top').addEventListener('click', goHome);
+  $('btn-resume').addEventListener('click', resumeGame);
+  $('btn-home-menu').addEventListener('click', goHome);
+  $('btn-restart-area').addEventListener('click', () => {
+    resumeGame();
+    if (mode === 'boss') bossReset();
+    else loadArea(areaIdx);
+  });
+
+  // Pilihan Gender UI
+  document.querySelectorAll('.gender-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.gender-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      const radio = card.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+    });
+  });
+
+  function startGame() {
+    ensureAudio();
+    const val = nameInput.value.trim();
+    playerName = val !== '' ? val : 'Petualang';
+    
+    const checkedRadio = document.querySelector('input[name="gender-opt"]:checked');
+    playerGender = checkedRadio ? checkedRadio.value : 'L';
+
+    gameStarted = true;
+    isPaused = false;
+    startMenuEl.style.display = 'none';
+    
+    newGame();
+    sfx.star();
+  }
+
+  btnStartGame.addEventListener('click', startGame);
+  nameInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); startGame(); }
+  });
+
+  function loadArea(i) {
+    areaIdx = i;
+    hp = MAX_HP; // Reset HP ketika masuk ke level baru (termasuk dari Level 1 ke Level 2)
+    areaStartStars = totalStars;
+    bgmMode = 'level';
+    scheduleBGM();
+
+    const L = LEVELS[i];
+    worldW = L.w;
+    platforms = L.ground.map(([x, w]) => ({ x, y: 410, w, h: 40, g: 1 }))
+      .concat(L.plat.map(([x, y, w]) => ({ x, y, w, h: 16 })));
+    pits = []; let end = 0;
+    L.ground.forEach(([x, w]) => { if (x > end) pits.push([end, x]); end = x + w; });
+    cps = L.cps.map(x => ({ x, on: false }));
+    Object.assign(player, { x: 50, y: 350, vx: 0, vy: 0, onGround: false, face: 1, kb: 0, inv: 0, hidden: false });
+    books = L.books.map(([x, y]) => ({ x, y, got: false }));
+    blocks = AREAS[i].blocks.map(([x, y, li]) => ({ x, y, w: 34, h: 34, state: 'new', bump: 0, lesson: lessons[li] }));
+    popups = []; particles = [];
+    flashA = 0; tele = null; dead = false; gatesOpen = false; won = false; camX = 0;
+    caseData = caseSeq[i];
+    const order = Math.random() < 0.5 ? ['sugra', 'kubra'] : ['kubra', 'sugra'];
+    doors = [
+      { x: worldW - 100, y: 338, w: 46, h: 72, type: order[0] },
+      { x: worldW - 50,  y: 338, w: 46, h: 72, type: order[1] }
+    ];
+    cardEl.classList.remove('show');
+  }
+
+  function newGame() {
+    clearLater();
+    if (bossInterval) clearInterval(bossInterval);
+    mode = 'world'; laser = null; curQ = null;
+    quizEl.classList.remove('open');
+    padEl.style.display = ''; $('kbhelp').style.display = '';
+    $('hint').textContent = 'Lompati jurang, kumpulkan mushaf, sundul Balok Ilmu ❓, lalu masuk gerbang yang tepat!';
+    hp = MAX_HP; totalStars = 0; bossCorrect = 0;
+    const first = Math.random() < 0.5 ? 'sugra' : 'kubra';
+    caseSeq = [pickCase(first), pickCase(first === 'sugra' ? 'kubra' : 'sugra')];
+    loadArea(0);
+  }
+
+  scheduleBGM();
+
+  // ---------- Input Keyboard & Mobile ----------
+  const held = { left: false, right: false, jump: false };
+  const keyMap = {
+    ArrowLeft: 'left', a: 'left', A: 'left',
+    ArrowRight: 'right', d: 'right', D: 'right',
+    ArrowUp: 'jump', w: 'jump', W: 'jump', ' ': 'jump'
+  };
+  window.addEventListener('keydown', e => {
+    if (!gameStarted) return;
+    if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { togglePause(); return; }
+    if (isPaused || modalOpen) return;
+    if (e.key === 'r' || e.key === 'R') { newGame(); return; }
+    if (mode === 'boss') {
+      if (e.key >= '1' && e.key <= '4') answer(Number(e.key) - 1);
+      return;
+    }
+    const k = keyMap[e.key];
+    if (k) { held[k] = true; e.preventDefault(); }
+  });
+  window.addEventListener('keyup', e => {
+    const k = keyMap[e.key];
+    if (k) { held[k] = false; if (!modalOpen) e.preventDefault(); }
+  });
+  function releaseAll() {
+    held.left = held.right = held.jump = false;
+    document.querySelectorAll('.pad-btn').forEach(b => b.classList.remove('active'));
+  }
+  window.addEventListener('blur', releaseAll);
+
+  document.querySelectorAll('.pad-btn').forEach(btn => {
+    const k = btn.dataset.key;
+    const on = e => { e.preventDefault(); if (!gameStarted || modalOpen || isPaused) return; held[k] = true; btn.classList.add('active'); };
+    const off = e => { e.preventDefault(); held[k] = false; btn.classList.remove('active'); };
+    btn.addEventListener('pointerdown', on);
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => btn.addEventListener(t, off));
+    btn.addEventListener('contextmenu', e => e.preventDefault());
+  });
+
+  canvas.addEventListener('pointerdown', () => { if (won && !modalOpen) newGame(); });
+
+  // ---------- Modal System ----------
+  function showModal(c) {
+    modalCb = c.onOk || null;
+    modalOpen = true;
+    releaseAll();
+    const set = (id, txt) => {
+      const el = $(id);
+      el.textContent = txt || '';
+      el.style.display = txt ? '' : 'none';
+    };
+    set('m-badge', c.badge); set('m-title', c.judul); set('m-arab', c.arab);
+    set('m-arti', c.arti); set('m-refleksi', c.isi); set('m-sumber', c.sumber);
+    okBtn.textContent = c.tombol;
+    modalEl.classList.add('open');
+    modalEl.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      modalEl.classList.add('show');
+      okBtn.focus({ preventScroll: true });
+    }));
+  }
+  function confirmModal() {
+    if (!modalOpen) return;
+    const cb = modalCb;
+    modalCb = null;
+    modalOpen = false;
+    modalEl.classList.remove('show');
+    modalEl.setAttribute('aria-hidden', 'true');
+    setTimeout(() => { if (!modalOpen) modalEl.classList.remove('open'); }, 320);
+    if (cb) cb();
+  }
+  okBtn.addEventListener('click', confirmModal);
+
+  // ---------- Interaksi Balok Ilmu ----------
+  function openLesson(b) {
+    b.state = 'reading';
+    const l = b.lesson;
+    showModal({
+      badge: '❓ Balok Ilmu', judul: l.judul, arab: l.arab, arti: '“' + l.arti + '”',
+      isi: l.refleksi, sumber: 'Sumber: ' + l.sumber, tombol: 'Paham! +1 ⭐',
+      onOk() {
+        b.state = 'done';
+        totalStars++;
+        popups.push({ x: b.x + b.w / 2, y: b.y - 6, t: 0, text: '+1 ⭐', color: '#b45309' });
+        sfx.star();
+      }
+    });
+    sfx.open();
+  }
+  function hitBlock(b) {
+    b.bump = 1;
+    sfx.bump();
+    if (b.state === 'new') openLesson(b);
+  }
+
+  // ---------- Gerbang Kasus ----------
+  function setFeedback(text, color) {
+    const fb = $('c-fb');
+    fb.textContent = text;
+    fb.style.color = color;
+  }
+  function showCard() {
+    $('c-area').textContent = 'Kartu Kasus • Area ' + (areaIdx + 1);
+    $('c-title').textContent = caseData.judul;
+    $('c-isi').textContent = caseData.isi;
+    $('c-legend').textContent = 'Gerbang kiri: ' + cap(doors[0].type) + '  •  Gerbang kanan: ' + cap(doors[1].type);
+    setFeedback('Peristiwa ini termasuk kiamat sugra atau kubra? Masuklah ke gerbang yang tepat.', '#fde68a');
+    cardEl.classList.add('show');
+  }
+  function openGates() {
+    gatesOpen = true;
+    showCard();
+    sfx.gate();
+    popups.push({ x: camX + W / 2, y: 170, t: 0, text: 'Gerbang terbuka! ✨', color: '#065f46' });
+  }
+
+  function burst(x, y, color, n) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = 60 + Math.random() * 180;
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 60, life: 0.9, max: 0.9, c: color });
+    }
+  }
+
+  function enterDoor(d) {
+    if (d.type === caseData.jawab) {
+      tele = { t: 0, door: d };
+      const col = d.type === 'sugra' ? '#5eead4' : '#c4b5fd';
+      burst(d.x + d.w / 2, d.y + d.h / 2, col, 40);
+      flashRGB = '255,255,255'; flashA = 0.85;
+      setFeedback('Tepat sekali! ✨', '#bbf7d0');
+      sfx.portal();
+    } else {
+      hp = Math.max(0, hp - 1);
+      player.kb = 0.4; player.vy = -380; player.onGround = false; player.inv = 1.4;
+      flashRGB = '220,38,38'; flashA = 0.6;
+      sfx.wrong();
+      if (hp > 0) {
+        setFeedback('Belum tepat, HP berkurang. Sugra = kecil, Kubra = besar.', '#fecaca');
+      } else {
+        dead = true;
+        setFeedback('HP habis…', '#fecaca');
+        setTimeout(() => {
+          if (!dead || hp > 0) return;
+          showModal({
+            badge: '💔 HP habis', judul: 'Jangan menyerah, coba lagi!',
+            isi: 'Jawaban yang tepat: Gerbang ' + cap(caseData.jawab) + '. ' + caseData.penjelasan,
+            sumber: caseData.sumber ? 'Sumber: ' + caseData.sumber : '', tombol: 'Ulangi area',
+            onOk() { hp = MAX_HP; totalStars = areaStartStars; loadArea(areaIdx); }
+          });
+          sfx.open();
+        }, 700);
+      }
+    }
+  }
+
+  function finishArea() {
+    player.hidden = true;
+    const last = areaIdx === AREAS.length - 1;
+    showModal({
+      badge: '✨ Jawaban benar', judul: caseData.judul + ' → Kiamat ' + cap(caseData.jawab),
+      isi: caseData.penjelasan, sumber: caseData.sumber ? 'Sumber: ' + caseData.sumber : '',
+      tombol: last ? 'Hadapi Bos! 👾' : 'Lanjut ke ' + AREAS[areaIdx + 1].nama,
+      onOk() { if (last) startBoss(); else loadArea(areaIdx + 1); }
+    });
+    sfx.open();
+  }
+
+  // ---------- Boss Battle & Timer ----------
+  function startBoss() {
+    clearLater();
+    mode = 'boss'; camX = 0;
+    bgmMode = 'boss';
+    scheduleBGM();
+
+    padEl.style.display = 'none'; $('kbhelp').style.display = 'none';
+    $('hint').textContent = 'Boss Battle: Jawab dengan benar sebelum waktu habis untuk mengalahkan Bos!';
+    cardEl.classList.remove('show');
+    flashRGB = '167,139,250'; flashA = 0.9;
+    bossReset();
+  }
+
+  function startBossTimer() {
+    bossTimer = 60;
+    if (bossInterval) clearInterval(bossInterval);
+    $('boss-timer-text').textContent = bossTimer;
+    
+    bossInterval = setInterval(() => {
+      if (!isPaused && mode === 'boss' && !won && !modalOpen && gameStarted) {
+        bossTimer--;
+        $('boss-timer-text').textContent = bossTimer;
+        if (bossTimer <= 10) {
+          sfx.bump();
+        }
+        if (bossTimer <= 0) {
+          clearInterval(bossInterval);
+          handleBossTimeout();
+        }
+      }
+    }, 1000);
+  }
+
+  function handleBossTimeout() {
+    hp = 0;
+    sfx.wrong();
+    showModal({
+      badge: '⌛ Waktu Habis!',
+      judul: 'Waktu Bertarung Habis!',
+      isi: 'Waktu untuk melawan Bos “Ragu & Lupa” telah habis. Tetap semangat dan coba lagi!',
+      sumber: '',
+      tombol: 'Coba Lagi 🔄',
+      onOk() { bossReset(); }
+    });
+  }
+
+  function bossReset() {
+    clearLater();
+    Object.assign(boss, { hp: 100, shown: 100, shake: 0, dying: 0, hurt: 0, atk: 0 });
+    Object.assign(player, { x: 90, y: 410 - player.h, vx: 0, vy: 0, face: 1, kb: 0, inv: 0, hidden: false });
+    hp = MAX_HP; bossCorrect = 0; laser = null; particles = []; popups = []; won = false; camX = 0;
+    qList = shuffle(BOSS_Q); qi = 0;
+    popups.push({ x: 600, y: 120, t: 0, text: 'Bos “Ragu & Lupa” muncul!', color: '#fde68a' });
+    sfx.wrong();
+    startBossTimer();
+    showQuestion();
+  }
+
+  function showQuestion() {
+    curQ = qList[qi % qList.length];
+    const opts = shuffle(curQ.o.map((t, i) => ({ t, ok: i === curQ.a })));
+    curQ.cur = opts;
+    $('q-num').textContent = 'Soal ' + (qi + 1) + ' • Benar: ' + bossCorrect + '/4';
+    $('q-text').textContent = curQ.q;
+    const box = $('q-opts');
+    box.innerHTML = '';
+    opts.forEach((o, i) => {
+      const b = document.createElement('button');
+      b.className = 'opt rounded-xl px-3 py-3 text-sm font-semibold text-emerald-50';
+      b.textContent = 'ABCD'[i] + '. ' + o.t;
+      b.addEventListener('click', () => answer(i));
+      box.appendChild(b);
+    });
+    quizEl.classList.add('open');
+    qLocked = false;
+  }
+
+  function answer(i) {
+    if (qLocked || !curQ || mode !== 'boss' || won || isPaused) return;
+    qLocked = true;
+    const btns = [...$('q-opts').children];
+    btns.forEach((b, k) => { b.disabled = true; if (curQ.cur[k].ok) b.classList.add('ok'); });
+    if (curQ.cur[i].ok) {
+      bossCorrect++;
+      laser = { t: 0 };
+      sfx.laser();
+      later(() => {
+        boss.hp = Math.max(0, boss.hp - BOSS_DMG);
+        boss.shake = 1; boss.hurt = 1;
+        burst(620, 230, '#fde047', 30);
+        popups.push({ x: 620, y: 150, t: 0, text: '-' + BOSS_DMG + '% HP Bos', color: '#fde68a' });
+        flashRGB = '255,255,255'; flashA = 0.5;
+        sfx.hit();
+      }, 450);
+      later(() => {
+        if (boss.hp <= 0) {
+          if (bossInterval) clearInterval(bossInterval);
+          // 1. Matikan musik dramatis & berganti ke musik calm di awal
+          bgmMode = 'level';
+          scheduleBGM();
+          
+          boss.dying = 0.01; 
+          sfx.boom();
+          // 2. Mainkan Sound Effect Kemenangan
+          sfx.win();
+          
+          later(bossWin, 1500);
+        } else {
+          qi++; showQuestion();
+        }
+      }, 1400);
+    } else {
+      btns[i].classList.add('bad');
+      hp = Math.max(0, hp - 1);
+      boss.atk = 1; player.inv = 1;
+      flashRGB = '220,38,38'; flashA = 0.6;
+      sfx.wrong();
+      const benar = curQ.cur.find(o => o.ok).t;
+      later(() => {
+        showModal({
+          badge: '💡 Petunjuk Remedial', judul: 'Belum tepat, ayo pelajari lagi!',
+          isi: 'Jawaban yang tepat: “' + benar + '”. ' + curQ.h,
+          sumber: hp > 0 ? 'Sisa HP kamu: ' + hp + ' ❤️' : 'HP kamu habis…',
+          tombol: hp > 0 ? 'Mengerti, lanjut!' : 'Lihat hasil',
+          onOk() {
+            if (hp > 0) { qi++; showQuestion(); }
+            else {
+              if (bossInterval) clearInterval(bossInterval);
+              showModal({
+                badge: '💔 HP habis', judul: 'Bos masih berdiri. Coba lagi!',
+                isi: 'Baca kembali petunjuknya, lalu hadapi Bos “Ragu & Lupa” sekali lagi.',
+                sumber: '', tombol: 'Lawan Bos lagi',
+                onOk() { bossReset(); }
+              });
+            }
+          }
+        });
+        sfx.open();
+      }, 700);
+    }
+  }
+
+  function bossWin() {
+    if (bossInterval) clearInterval(bossInterval);
+    bgmMode = 'level';
+    scheduleBGM();
+    quizEl.classList.remove('open');
+    finalScore = totalStars * SCORE.star + bossCorrect * SCORE.correct + hp * SCORE.hp + Math.max(0, bossTimer * 10);
+    won = true;
+    flashRGB = '255,255,255'; flashA = 0.9;
+    sfx.win();
+  }
+
+  // ---------- Respawing & Fall Logic ----------
+  function respawn() {
+    const c = cps.filter(k => k.on).pop();
+    Object.assign(player, { x: c ? c.x : 50, y: 340, vx: 0, vy: 0, kb: 0, inv: 1.5, onGround: false });
+    camX = Math.max(0, Math.min(worldW - W, player.x + player.w / 2 - W / 2));
+  }
+  function fall() {
+    hp = Math.max(0, hp - 1);
+    flashRGB = '220,38,38'; flashA = 0.6;
+    sfx.wrong();
+    if (hp > 0) {
+      respawn();
+      popups.push({ x: player.x + 16, y: 320, t: 0, text: 'Jatuh! HP -1 💔', color: '#b91c1c' });
+    } else {
+      dead = true; player.hidden = true;
+      setTimeout(() => {
+        if (!dead || hp > 0) return;
+        showModal({
+          badge: '💔 HP habis', judul: 'Jatuh ke jurang!',
+          isi: 'Perhatikan celah di tanah, lalu lompat dari tepinya. Kamu bisa mencoba lagi dari awal area.',
+          sumber: '', tombol: 'Ulangi area',
+          onOk() { hp = MAX_HP; totalStars = areaStartStars; loadArea(areaIdx); }
+        });
+        sfx.open();
+      }, 600);
+    }
+  }
+
+  // ---------- Update Game Loop ----------
+  const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+  function update(dt) {
+    if (!gameStarted || isPaused) return;
+    const locked = modalOpen || !!tele || dead;
+    if (player.inv > 0) player.inv -= dt;
+
+    const dir = locked ? 0 : (held.right ? 1 : 0) - (held.left ? 1 : 0);
+    if (player.kb > 0) {
+      player.kb -= dt;
+      player.vx = -KB_SPEED;
+    } else {
+      player.vx = dir * SPEED;
+      if (dir !== 0) player.face = dir;
+    }
+
+    player.x += player.vx * dt;
+    player.x = Math.max(0, Math.min(worldW - player.w, player.x));
+    for (const b of blocks) {
+      if (overlap(player, b)) {
+        if (player.vx > 0) player.x = b.x - player.w;
+        else if (player.vx < 0) player.x = b.x + b.w;
+      }
+    }
+
+    if (!locked && player.kb <= 0 && held.jump && player.onGround) {
+      player.vy = -JUMP;
+      player.onGround = false;
+    }
+    player.vy = Math.min(player.vy + GRAVITY * dt, MAX_FALL);
+
+    const prevY = player.y;
+    player.y += player.vy * dt;
+    player.onGround = false;
+
+    for (const p of platforms) {
+      const xOverlap = (player.x + player.w > p.x) && (player.x < p.x + p.w);
+      if (xOverlap && player.vy >= 0 && prevY + player.h <= p.y + 12 && player.y + player.h >= p.y) {
+        player.y = p.y - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      }
+    }
+
+    for (const b of blocks) {
+      if (!overlap(player, b)) continue;
+      if (player.vy < 0 && prevY >= b.y + b.h - 1) {
+        player.y = b.y + b.h;
+        player.vy = 0;
+        hitBlock(b);
+      } else if (player.vy >= 0 && prevY + player.h <= b.y + 1) {
+        player.y = b.y - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      }
+    }
+
+    if (player.y > H + 30 && !dead) fall();
+
+    for (const c of cps) {
+      if (!c.on && player.x > c.x) {
+        c.on = true; sfx.gate();
+        popups.push({ x: c.x, y: 330, t: 0, text: 'Checkpoint! 🚩', color: '#166534' });
+      }
+    }
+
+    const camT = Math.max(0, Math.min(worldW - W, player.x + player.w / 2 - W / 2));
+    camX += (camT - camX) * Math.min(1, dt * 8);
+
+    for (const bk of books) {
+      if (!bk.got) {
+        const dx = (player.x + player.w / 2) - bk.x;
+        const dy = (player.y + player.h / 2) - bk.y;
+        if (Math.hypot(dx, dy) < 28) bk.got = true;
+      }
+    }
+
+    const missionDone = books.every(bk => bk.got) && blocks.every(b => b.state === 'done');
+    if (!gatesOpen && !dead && !tele && !modalOpen && (missionDone || !LOCK_GATES)) openGates();
+
+    const cx = player.x + player.w / 2;
+    for (const d of doors) {
+      if (cx > d.x && cx < d.x + d.w && player.y < d.y + d.h && player.y + player.h > d.y) {
+        if (!gatesOpen) {
+          if (lockCd <= 0) {
+            popups.push({ x: player.x, y: 300, t: 0, text: 'Selesaikan misi dulu 🔒', color: '#7f1d1d' });
+            lockCd = 2;
+          }
+        } else if (!tele && !dead && !modalOpen && player.inv <= 0 && player.kb <= 0) {
+          enterDoor(d);
+        }
+        break;
+      }
+    }
+  }
+
+  function bossTick(dt) {
+    if (isPaused) return;
+    boss.shown += (boss.hp - boss.shown) * Math.min(1, dt * 6);
+    boss.shake = Math.max(0, boss.shake - dt * 2.5);
+    boss.hurt = Math.max(0, boss.hurt - dt * 3);
+    boss.atk = Math.max(0, boss.atk - dt * 2);
+    if (player.inv > 0) player.inv -= dt;
+    if (laser) { laser.t += dt; if (laser.t > 0.5) laser = null; }
+    if (boss.dying > 0 && boss.dying < 1) {
+      boss.dying = Math.min(1, boss.dying + dt / 1.4);
+      if (Math.random() < 0.7) burst(560 + Math.random() * 120, 170 + Math.random() * 120, Math.random() < 0.5 ? '#fde047' : '#c4b5fd', 3);
+    }
+  }
+
+  function tickFx(dt) {
+    if (isPaused) return;
+    for (const b of blocks) if (b.bump > 0) b.bump = Math.max(0, b.bump - dt / 0.25);
+    for (const p of popups) { p.t += dt; p.y -= 40 * dt; }
+    popups = popups.filter(p => p.t < 1);
+    lockCd -= dt;
+    flashA = Math.max(0, flashA - dt * 1.6);
+    for (const p of particles) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * dt; }
+    particles = particles.filter(p => p.life > 0);
+
+    if (tele) {
+      tele.t += dt / 0.9;
+      const d = tele.door;
+      player.x += (d.x + d.w / 2 - player.w / 2 - player.x) * Math.min(1, dt * 8);
+      if (Math.random() < 0.6) {
+        particles.push({ x: d.x + Math.random() * d.w, y: d.y + d.h, vx: (Math.random() - 0.5) * 40, vy: -120 - Math.random() * 120,
+          life: 0.7, max: 0.7, c: d.type === 'sugra' ? '#99f6e4' : '#ddd6fe' });
+      }
+      if (tele.t >= 1) { tele = null; finishArea(); }
+    }
+  }
+
+  // ---------- Render & Visual Studio ----------
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+  }
+
+  // Render Gerbang (Level 2 = Light Mode)
+  function drawDoor(d, t) {
+    let pal;
+    if (areaIdx === 1) {
+      // Light Mode Palette khusus Level 2
+      pal = d.type === 'sugra' 
+        ? ['#a7f3d0', '#34d399', '#065f46']  // Light Mint/Emerald
+        : ['#fef08a', '#facc15', '#854d0e']; // Light Amber/Gold
+    } else {
+      pal = d.type === 'sugra' 
+        ? ['#2dd4bf', '#0f766e', '#ffffff'] 
+        : ['#a78bfa', '#5b21b6', '#ffffff'];
+    }
+
+    const cx = d.x + d.w / 2, cy = d.y + d.h / 2;
+    ctx.save();
+    if (gatesOpen) { ctx.shadowColor = pal[0]; ctx.shadowBlur = 14 + 8 * Math.sin(t / 220); }
+    const g = ctx.createLinearGradient(0, d.y, 0, d.y + d.h);
+    g.addColorStop(0, gatesOpen ? pal[0] : '#d1d5db');
+    g.addColorStop(1, gatesOpen ? pal[1] : '#6b7280');
+    ctx.fillStyle = g;
+    rr(d.x, d.y, d.w, d.h, [23, 23, 0, 0]);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = areaIdx === 1 ? '#ffffff' : 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 3;
+    rr(d.x, d.y, d.w, d.h, [23, 23, 0, 0]);
+    ctx.stroke();
+
+    if (gatesOpen) {
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      for (let i = 0; i < 3; i++) {
+        const k = ((t / 700) + i / 3) % 1;
+        ctx.globalAlpha = 1 - k;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 6, 4 + k * 16, 8 + k * 28, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else {
+      ctx.font = '20px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔒', cx, cy);
+    }
+    ctx.restore();
+
+    // Label Pintu
+    ctx.fillStyle = areaIdx === 1 ? pal[2] : '#134e4a';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(cap(d.type), cx, d.y - 9);
+  }
+
+  function drawPlayer(t, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const cx = player.x + player.w / 2;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.beginPath();
+    ctx.ellipse(cx, player.y + player.h - 2, 14, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (playerGender === 'P') {
+      // Karakter Perempuan
+      ctx.fillStyle = '#be185d';
+      ctx.beginPath();
+      ctx.moveTo(player.x + 2, player.y + 16);
+      ctx.lineTo(player.x + player.w - 2, player.y + 16);
+      ctx.lineTo(player.x + player.w + 2, player.y + player.h);
+      ctx.lineTo(player.x - 2, player.y + player.h);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#9d174d';
+      ctx.fillRect(player.x + 1, player.y + 26, player.w - 2, 4);
+
+      ctx.fillStyle = '#fb7185';
+      rr(player.x - 2, player.y - 6, player.w + 4, 28, [14, 14, 8, 8]);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(player.x - 3, player.y + 12);
+      ctx.lineTo(player.x + player.w + 3, player.y + 12);
+      ctx.lineTo(player.x + player.w + 1, player.y + 24);
+      ctx.lineTo(player.x - 1, player.y + 24);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#fde047';
+      rr(cx - 9, player.y + 3, 18, 12, 5);
+      ctx.fill();
+
+      const eyeOffsetX = player.face === 1 ? 3 : -3;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(cx + eyeOffsetX - 6, player.y + 5, 4, 5);
+      ctx.fillRect(cx + eyeOffsetX + 2, player.y + 5, 4, 5);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(cx + eyeOffsetX - 5 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
+      ctx.fillRect(cx + eyeOffsetX + 3 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
+      
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(cx + eyeOffsetX - 6, player.y + 4, 4, 1);
+      ctx.fillRect(cx + eyeOffsetX + 2, player.y + 4, 4, 1);
+
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(cx + (player.face === 1 ? -10 : 10), player.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#d97706';
+      const bagX = player.face === 1 ? player.x - 5 : player.x + player.w - 1;
+      ctx.fillRect(bagX, player.y + 18, 6, 16);
+
+    } else {
+      // Karakter Laki-laki
+      ctx.fillStyle = '#059669';
+      ctx.fillRect(player.x, player.y + 10, player.w, player.h - 10);
+      ctx.fillStyle = '#047857';
+      ctx.fillRect(player.x, player.y + 30, player.w, 4);
+      ctx.fillStyle = '#064e3b';
+      ctx.fillRect(player.x + 2, player.y + 34, player.w - 4, 10);
+
+      ctx.fillStyle = '#fde047';
+      ctx.fillRect(player.x + 3, player.y + 2, player.w - 6, 14);
+
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(player.x + 2, player.y - 6, player.w - 4, 9);
+
+      const eyeOffsetX = player.face === 1 ? 4 : -4;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(cx + eyeOffsetX - 7, player.y + 5, 5, 5);
+      ctx.fillRect(cx + eyeOffsetX + 2, player.y + 5, 5, 5);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(cx + eyeOffsetX - 6 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
+      ctx.fillRect(cx + eyeOffsetX + 3 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
+
+      ctx.fillStyle = '#b45309';
+      const bagX = player.face === 1 ? player.x - 5 : player.x + player.w - 1;
+      ctx.fillRect(bagX, player.y + 14, 6, 18);
+    }
+
+    ctx.restore();
+  }
+
+  const wrap = (v, m) => ((v % m) + m) % m;
+  const grounded = x => platforms.some(p => p.g && x > p.x + 24 && x < p.x + p.w - 24);
+
+  function ridge(par, base, amp, color, seed) {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for (let x = 0; x <= W + 20; x += 20) {
+      const wx = x + camX * par;
+      ctx.lineTo(x, base - amp * (1 - Math.abs(Math.sin(wx * 0.006 + seed))) - 22 * Math.sin(wx * 0.021 + seed * 2));
+    }
+    ctx.lineTo(W + 20, H); ctx.closePath(); ctx.fill();
+  }
+
+  function drawMosque(x, dusk) {
+    const b = 410, wall = dusk ? '#e7c9a0' : '#f4efe0';
+    ctx.fillStyle = wall; ctx.fillRect(x, b - 64, 150, 64);
+    ctx.fillStyle = '#0f766e'; ctx.beginPath(); ctx.arc(x + 75, b - 64, 46, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#fbbf24'; ctx.fillRect(x + 73, b - 130, 4, 20);
+    ctx.beginPath(); ctx.arc(x + 75, b - 132, 5, 0, 7); ctx.fill();
+    for (const mx of [x - 24, x + 160]) {
+      ctx.fillStyle = wall; ctx.fillRect(mx, b - 120, 14, 120);
+      ctx.fillStyle = '#0f766e'; ctx.beginPath(); ctx.moveTo(mx - 3, b - 120); ctx.lineTo(mx + 7, b - 148); ctx.lineTo(mx + 17, b - 120); ctx.fill();
+      ctx.fillStyle = '#fbbf24'; ctx.fillRect(mx + 2, b - 100, 10, 4);
+    }
+    ctx.fillStyle = '#134e4a'; rr(x + 59, b - 42, 32, 42, [16, 16, 0, 0]); ctx.fill();
+    ctx.fillStyle = dusk ? '#fde68a' : '#7dd3fc';
+    [x + 18, x + 112].forEach(wx => { rr(wx, b - 46, 20, 26, [10, 10, 0, 0]); ctx.fill(); });
+  }
+
+  function drawWorld(t) {
+    const dusk = AREAS[areaIdx].dusk, L = LEVELS[areaIdx];
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    AREAS[areaIdx].sky.forEach((c, i, a) => sky.addColorStop(i / (a.length - 1), c));
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+    if (dusk) {
+      ctx.fillStyle = '#fff';
+      for (let i = 0; i < 45; i++) { ctx.globalAlpha = 0.25 + 0.6 * Math.abs(Math.sin(t / 700 + i * 1.7)); ctx.fillRect((i * 137) % W, (i * 61) % 190, 2, 2); }
+      ctx.globalAlpha = 1;
+      const m = (t % 5000) / 5000;
+      if (m < 0.2) {
+        const k = m / 0.2, mx = 720 - k * 480, my = 20 + k * 150;
+        ctx.strokeStyle = 'rgba(255,255,255,' + (1 - k) + ')'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(mx + 60, my - 36); ctx.stroke();
+      }
+    }
+
+    const sx = (dusk ? 600 : 620) - camX * 0.03, sy = dusk ? 318 : 85;
+    const g = ctx.createRadialGradient(sx, sy, 10, sx, sy, 90 + 6 * Math.sin(t / 500));
+    g.addColorStop(0, dusk ? 'rgba(254,215,170,.95)' : 'rgba(255,247,190,.95)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(sx - 120, sy - 120, 240, 240);
+    ctx.fillStyle = dusk ? '#fb923c' : '#fde047';
+    ctx.beginPath(); ctx.arc(sx, sy, dusk ? 46 : 32, 0, 7); ctx.fill();
+    if (dusk) {
+      const mx = 130 - camX * 0.02;
+      ctx.fillStyle = '#fef9c3'; ctx.beginPath(); ctx.arc(mx, 70, 26, 0, 7); ctx.fill();
+      ctx.fillStyle = '#5a223b'; ctx.beginPath(); ctx.arc(mx + 12, 63, 23, 0, 7); ctx.fill();
+    }
+
+    ctx.fillStyle = dusk ? 'rgba(251,146,60,.4)' : 'rgba(255,255,255,.85)';
+    for (let i = 0; i < 6; i++) {
+      const cx = wrap(i * 330 + t * 0.008 * (1 + i % 3) - camX * (0.1 + 0.05 * (i % 2)), W + 320) - 160, cy = 45 + (i * 43) % 130;
+      [[0, 0, 44, 15], [26, -9, 28, 14], [-24, -6, 24, 11]].forEach(([dx, dy, rx, ry]) => {
+        ctx.beginPath(); ctx.ellipse(cx + dx, cy + dy, rx, ry, 0, 0, 7); ctx.fill();
+      });
+    }
+
+    if (!dusk) {
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+      for (let i = 0; i < 4; i++) {
+        const bx = wrap(t * 0.05 + i * 260 - camX * 0.25, W + 160) - 80, by = 95 + i * 24 + Math.sin(t / 300 + i) * 8, w = Math.sin(t / 110 + i) * 6;
+        ctx.beginPath(); ctx.moveTo(bx - 9, by - w); ctx.lineTo(bx, by); ctx.lineTo(bx + 9, by - w); ctx.stroke();
+      }
+    }
+
+    ridge(0.2, 300, 120, dusk ? '#5b2a5e' : '#9bc7bd', 1);
+    ridge(0.45, 388, 85, dusk ? '#7f2a3c' : '#5fa37c', 3);
+
+    ctx.save();
+    ctx.translate(-camX, 0);
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const [a, b] of pits) {
+      const pg = ctx.createLinearGradient(0, 410, 0, H);
+      pg.addColorStop(0, dusk ? '#991b1b' : '#292524'); pg.addColorStop(1, '#0c0a09');
+      ctx.fillStyle = pg; ctx.fillRect(a, 410, b - a, 40);
+      ctx.fillStyle = 'rgba(251,146,60,' + (0.35 + 0.25 * Math.sin(t / 250 + a)) + ')';
+      ctx.fillRect(a, 436, b - a, 14);
+      ctx.font = '22px system-ui, sans-serif';
+      ctx.fillText('⚠️', (a + b) / 2, 392);
+    }
+
+    drawMosque(L.mosque, dusk);
+    ctx.font = '40px system-ui, sans-serif';
+    for (let x = 90; x < worldW - 130; x += 230) {
+      if (grounded(x) && (x < L.mosque - 40 || x > L.mosque + 200)) ctx.fillText('🌴', x, 388);
+    }
+
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    for (const [x, txt] of L.signs) {
+      const w = ctx.measureText(txt).width + 18;
+      ctx.fillStyle = '#78350f'; ctx.fillRect(x - 2, 372, 4, 38);
+      ctx.fillStyle = '#fde68a'; rr(x - w / 2, 350, w, 24, 6); ctx.fill();
+      ctx.strokeStyle = '#92400e'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#451a03'; ctx.fillText(txt, x, 362);
+    }
+
+    platforms.forEach(p => {
+      ctx.fillStyle = p.g ? '#6b4a2b' : '#8a6238';
+      ctx.fillRect(p.x, p.y, p.w, p.h);
+      ctx.fillStyle = '#3f9d4f';
+      ctx.fillRect(p.x, p.y, p.w, p.g ? 10 : 6);
+    });
+
+    for (const c of cps) {
+      ctx.fillStyle = '#e5e7eb'; ctx.fillRect(c.x, 350, 3, 60);
+      ctx.fillStyle = c.on ? '#22c55e' : '#9ca3af';
+      ctx.beginPath(); ctx.moveTo(c.x + 3, 350); ctx.lineTo(c.x + 29, 360); ctx.lineTo(c.x + 3, 371); ctx.fill();
+    }
+
+    for (const b of blocks) {
+      const done = b.state === 'done';
+      const y = b.y - (b.bump > 0 ? Math.sin((1 - b.bump) * Math.PI) * 8 : 0);
+      ctx.fillStyle = done ? '#a8a29e' : '#f59e0b';
+      ctx.fillRect(b.x, y, b.w, b.h);
+      ctx.strokeStyle = done ? '#78716c' : '#92400e';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(b.x + 1.5, y + 1.5, b.w - 3, b.h - 3);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 22px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(done ? '✓' : '?', b.x + b.w / 2, y + b.h / 2 + 1);
+    }
+
+    doors.forEach(d => drawDoor(d, t));
+
+    ctx.font = '28px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    for (const bk of books) {
+      if (bk.got) continue;
+      ctx.fillText('📖', bk.x, bk.y + Math.sin(t / 300 + bk.x) * 4);
+    }
+
+    if (tele) {
+      const d = tele.door, cx = d.x + d.w / 2, cy = d.y + d.h / 2, r = 20 + 170 * tele.t;
+      const gl = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      gl.addColorStop(0, 'rgba(255,255,255,' + (0.9 * (1 - tele.t * 0.5)) + ')');
+      gl.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gl;
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+
+    if (!player.hidden) {
+      drawPlayer(t, tele ? Math.max(0, 1 - tele.t) : (player.inv > 0 && Math.floor(t / 80) % 2 ? 0.35 : 1));
+    }
+    ctx.restore();
+  }
+
+  // Visual Latar Simulasi Hari Akhir (Boss Level)
+  function drawDoomsdayBackground(t) {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#2a0808');
+    sky.addColorStop(0.4, '#581c87');
+    sky.addColorStop(0.8, '#991b1b');
+    sky.addColorStop(1, '#ea580c');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    // Kilatan Takdir/Guncangan Kiamat
+    if (Math.random() < 0.04) {
+      ctx.fillStyle = 'rgba(254, 202, 202, 0.15)';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Gerhana Matahari Merah
+    const sx = W / 2, sy = 120;
+    const sg = ctx.createRadialGradient(sx, sy, 10, sx, sy, 110);
+    sg.addColorStop(0, 'rgba(239, 68, 68, 0.8)');
+    sg.addColorStop(0.5, 'rgba(185, 28, 28, 0.4)');
+    sg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(sx - 150, sy - 150, 300, 300);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(sx, sy, 35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Siluet Gunung Beterbangan & Hancur
+    ctx.fillStyle = '#1c0a0a';
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 30) {
+      const my = 330 - Math.sin(x * 0.02 + t * 0.001) * 30 - Math.cos(x * 0.05) * 18;
+      ctx.lineTo(x, my);
+    }
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // Hujan Debu Api / Meteor
+    for (let i = 0; i < 35; i++) {
+      const mx = (i * 37 + t * 0.12) % (W + 100) - 50;
+      const my = (i * 53 + t * 0.25) % (H + 50) - 20;
+      const size = 2 + (i % 3);
+      ctx.fillStyle = '#f97316';
+      ctx.globalAlpha = 0.4 + 0.5 * Math.sin(t / 200 + i);
+      ctx.fillRect(mx, my, size, size * 3);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(mx - 1, my - 4, size, 4);
+    }
+    ctx.globalAlpha = 1;
+
+    // Tanah Retak Berlava
+    ctx.fillStyle = '#0f0505';
+    ctx.fillRect(0, 410, W, 40);
+
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x < W; x += 40) {
+      ctx.moveTo(x, 410);
+      ctx.lineTo(x + 15, 425);
+      ctx.lineTo(x + 35, 410);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(0, 410, W, 4);
+  }
+
+  function drawBoss(t) {
+    drawDoomsdayBackground(t);
+
+    const dy = boss.dying, sh = boss.shake * 10 * Math.sin(t / 25);
+    const bx = 620 + sh - boss.atk * 60, by = 240 + Math.sin(t / 400) * 10;
+    ctx.save();
+    ctx.globalAlpha = 1 - dy;
+    ctx.translate(bx, by);
+    ctx.scale(1 + dy * 0.5, 1 + dy * 0.5);
+    ctx.shadowColor = boss.hurt > 0 ? '#fde047' : '#ef4444';
+    ctx.shadowBlur = 30 + 20 * boss.hurt;
+    ctx.font = '150px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('👾', 0, 0);
+    ctx.restore();
+
+    if (laser) {
+      const k = Math.min(1, laser.t / 0.15), x0 = player.x + player.w, y0 = player.y + 14, x1 = x0 + (bx - 60 - x0) * k;
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.shadowColor = '#fde047'; ctx.shadowBlur = 25;
+      ctx.strokeStyle = '#fde047'; ctx.lineWidth = 14 * (1 - laser.t / 0.6);
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, by); ctx.stroke();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5 * (1 - laser.t / 0.6);
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, by); ctx.stroke();
+      ctx.restore();
+    }
+
+    if (!player.hidden) drawPlayer(t, player.inv > 0 && Math.floor(t / 80) % 2 ? 0.35 : 1);
+
+    // Bar HP Bos
+    const bw = 300, bxl = W / 2 - bw / 2;
+    ctx.fillStyle = 'rgba(15,10,40,0.85)';
+    ctx.fillRect(bxl - 10, 10, bw + 20, 50);
+    ctx.fillStyle = '#ede9fe';
+    ctx.font = 'bold 14px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('👾 Ragu & Lupa • ' + Math.round(boss.hp) + '%', W / 2, 26);
+    ctx.fillStyle = '#4c1d95';
+    ctx.fillRect(bxl, 38, bw, 14);
+    ctx.fillStyle = boss.hp > 50 ? '#ef4444' : '#f97316';
+    ctx.fillRect(bxl, 38, bw * Math.max(0, boss.shown) / 100, 14);
+    ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2;
+    ctx.strokeRect(bxl, 38, bw, 14);
+  }
+
+  function draw(t) {
+    if (mode === 'boss') drawBoss(t); else drawWorld(t);
+
+    ctx.save(); ctx.translate(-camX, 0);
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / p.max);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.font = 'bold 20px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    for (const p of popups) {
+      const tw = ctx.measureText(p.text).width;
+      ctx.globalAlpha = 1 - p.t;
+      ctx.fillStyle = p.color;
+      ctx.fillText(p.text, Math.max(camX + tw / 2 + 8, Math.min(camX + W - tw / 2 - 8, p.x)), p.y);
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    // HUD Status Pemain
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(15,42,36,0.85)';
+    
+    if (mode === 'boss') {
+      ctx.fillRect(10, 10, 240, 34);
+      ctx.fillStyle = '#ecfdf5';
+      ctx.textAlign = 'left';
+      const icon = playerGender === 'P' ? '🧕' : '👦';
+      ctx.fillText(icon + ' ' + playerName + ' | ⭐ ' + totalStars, 20, 28);
+      ctx.fillText('❤️'.repeat(hp) + '🖤'.repeat(MAX_HP - hp), 160, 28);
+    } else {
+      const got = books.filter(bk => bk.got).length;
+      const starsHere = blocks.filter(b => b.state === 'done').length;
+      ctx.fillRect(10, 10, 340, 34);
+      ctx.fillStyle = '#ecfdf5';
+      ctx.textAlign = 'left';
+      const icon = playerGender === 'P' ? '🧕' : '👦';
+      ctx.fillText(icon + ' ' + playerName, 20, 28);
+      ctx.fillText('📖 ' + got + '/' + books.length, 125, 28);
+      ctx.fillText('⭐ ' + starsHere + '/' + blocks.length, 195, 28);
+      ctx.fillText('❤️️'.repeat(hp) + '🖤'.repeat(MAX_HP - hp), 265, 28);
+
+      const label = 'Area ' + (areaIdx + 1) + ': ' + AREAS[areaIdx].nama;
+      const lw = ctx.measureText(label).width;
+      ctx.fillStyle = 'rgba(15,42,36,0.85)';
+      ctx.fillRect(W - lw - 30, 10, lw + 20, 34);
+      ctx.fillStyle = '#ecfdf5';
+      ctx.textAlign = 'right';
+      ctx.fillText(label, W - 20, 28);
+    }
+
+    if (flashA > 0) {
+      ctx.fillStyle = 'rgba(' + flashRGB + ',' + (flashA * 0.7) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Layar Hasil Akhir (Sertifikat Skor)
+    if (won) {
+      ctx.fillStyle = 'rgba(15,42,36,0.94)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f5c451';
+      ctx.font = 'bold 32px system-ui, sans-serif';
+      ctx.fillText('🎉 Level Complete! 🎉', W / 2, 65);
+      
+      ctx.fillStyle = '#ecfdf5';
+      ctx.font = 'bold 18px system-ui, sans-serif';
+      const icon = playerGender === 'P' ? '🧕' : '👦';
+      ctx.fillText('Selamat, ' + icon + ' ' + playerName + '!', W / 2, 98);
+
+      ctx.font = '15px system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(236,253,245,.9)';
+      ctx.fillText('Bos “Ragu & Lupa” telah berhasil dikalahkan. Alhamdulillah!', W / 2, 122);
+
+      const rows = [
+        ['⭐ Bintang ilmu', totalStars + ' × ' + SCORE.star, totalStars * SCORE.star],
+        ['🎯 Jawaban benar (Bos)', bossCorrect + ' × ' + SCORE.correct, bossCorrect * SCORE.correct],
+        ['❤️ Sisa HP', hp + ' × ' + SCORE.hp, hp * SCORE.hp],
+        ['⏳ Sisa Waktu', bossTimer + ' × 10', Math.max(0, bossTimer * 10)]
+      ];
+      ctx.font = '16px system-ui, sans-serif';
+      rows.forEach((r, i) => {
+        const y = 158 + i * 28;
+        ctx.textAlign = 'left'; ctx.fillText(r[0], 210, y);
+        ctx.textAlign = 'center'; ctx.fillText(r[1], 470, y);
+        ctx.textAlign = 'right'; ctx.fillText(String(r[2]), 590, y);
+      });
+      ctx.strokeStyle = 'rgba(245,196,81,.6)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(210, 275); ctx.lineTo(590, 275); ctx.stroke();
+      ctx.fillStyle = '#f5c451';
+      ctx.font = 'bold 28px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Skor Akhir: ' + finalScore, W / 2, 310);
+      
+      const medal = finalScore >= 1100 ? '🏆 Mujahid Ilmu' : finalScore >= 850 ? '🥇 Pencari Hikmah' : '🥈 Pejuang Istikamah';
+      ctx.fillStyle = '#ecfdf5';
+      ctx.font = 'bold 21px system-ui, sans-serif';
+      ctx.fillText(medal, W / 2, 348);
+      ctx.font = '14px system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(236,253,245,.8)';
+      ctx.fillText('Tekan R atau ketuk layar untuk main lagi.', W / 2, 390);
+    }
+  }
+
+  // ---------- Game Loop Utama ----------
+  let last = performance.now(), timeScale = 1;
+  function loop(now) {
+    const raw = Math.min((now - last) / 1000, 0.033);
+    last = now;
+    timeScale += ((modalOpen ? MODAL_TIME_SCALE : 1) - timeScale) * Math.min(1, raw * 6);
+    
+    if (mode === 'boss') bossTick(raw);
+    else if (!won && gameStarted && !isPaused) update(raw * timeScale);
+    
+    tickFx(raw);
+    draw(now);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
