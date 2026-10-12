@@ -12,18 +12,30 @@
   .pad-btn { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   .pad-btn.active { background: #f5c451; color: #123; transform: scale(0.94); }
 
-  #modal { position: fixed; inset: 0; z-index: 50; display: none; items-center justify-center; padding: 1rem; }
+  /* Notifikasi biasa memenuhi viewport; kartu kasus dan pop-up papan tetap berada di arena. */
+  #modal { position: fixed; inset: 0; z-index: 80; display: none; align-items: stretch; justify-content: stretch; padding: 0; overflow: hidden; }
   #modal.open { display: flex; }
-  #modal .m-backdrop { position: absolute; inset: 0; background: rgba(6, 30, 24, .35);
-    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transition: opacity .3s; }
-  #modal .m-card { position: relative; width: 100%; max-width: 28rem; max-height: 92vh; overflow-y: auto; background: rgba(255, 255, 255, .12);
+  #modal .m-backdrop { position: absolute; inset: 0; background: rgba(3, 20, 17, .94);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); opacity: 0; transition: opacity .3s; }
+  #modal .m-card { position: relative; box-sizing: border-box; width: 100vw; min-width: 100%; height: 100vh; height: 100dvh; min-height: 100vh;
+    max-width: none; max-height: none; overflow-y: auto; display: flex; flex-direction: column; justify-content: center; align-items: stretch;
+    padding: clamp(1rem, 4vw, 3.5rem); border: 0; border-radius: 0 !important; background: rgba(6, 30, 24, .97);
     -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, .28);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .25);
-    opacity: 0; transform: translateY(16px) scale(.96); transition: opacity .3s, transform .3s; }
+    box-shadow: none; opacity: 0; transform: translateY(16px) scale(.99); transition: opacity .3s, transform .3s; }
+  #modal .m-card > * { box-sizing: border-box; width: 100%; max-width: 52rem; margin-left: auto; margin-right: auto; }
+  #modal #m-badge { align-self: center; width: max-content; max-width: 100%; text-align: center; }
+  #modal #m-title { text-align: center; font-size: clamp(1.35rem, 3.5vw, 2.5rem); line-height: 1.2; }
+  #modal #m-refleksi { font-size: clamp(.95rem, 1.7vw, 1.2rem); line-height: 1.7; }
+  #modal #m-ok { max-width: 22rem; align-self: center; }
   #modal.show .m-backdrop { opacity: 1; }
   #modal.show .m-card { opacity: 1; transform: none; }
-  #m-arab { font-family: "Traditional Arabic", "Amiri", "Noto Naskh Arabic", "Scheherazade New", serif; }
+  #m-arab { font-family: "Traditional Arabic", "Amiri", "Noto Naskh Arabic", "Scheherazade New", serif; font-size: clamp(1.4rem, 3.2vw, 2.5rem); }
+  @media (max-height: 520px) and (orientation: landscape) {
+    #modal .m-card { justify-content: flex-start; padding: .65rem 1rem; }
+    #modal #m-arab { margin-top: .5rem; padding: .5rem 1rem; }
+    #modal #m-refleksi, #modal #m-arti, #modal #m-sumber { margin-top: .5rem; }
+    #modal #m-ok { margin-top: .65rem; }
+  }
 
   #case-card { position: absolute; left: 0; right: 0; top: 11%; display: flex; justify-content: center; padding: 0 .5rem;
     pointer-events: none; opacity: 0; transform: translateY(-8px); transition: opacity .3s, transform .3s; }
@@ -359,7 +371,7 @@
     </section>
 
     <p id="kbhelp" class="mt-2 text-center text-xs text-emerald-200/70">
-      Keyboard: ← → / A D (gerak), Spasi / ↑ / W (lompat), P / Esc (pause), R (ulang).
+      Keyboard: ← → / A D (gerak), Spasi / ↑ / W (lompat), E (masuk gerbang), P / Esc (pause), R (ulang).
     </p>
   </main>
 
@@ -520,6 +532,7 @@
   let hp = MAX_HP, totalStars = 0, areaStartStars = 0;
   let won = false, dead = false, gatesOpen = false, tele = null;
   let modalOpen = false, modalCb = null;
+  let pitDeath = null; // animasi tertusuk di stage 1 atau terbakar di stage 2
   let flashA = 0, flashRGB = '255,255,255', lockCd = 0;
   let camX = 0, worldW = 800, platforms = [], pits = [], cps = [];
 
@@ -759,7 +772,7 @@
   let tutStep = 1;
   const simCanvas = $('sim-canvas');
   const simCtx = simCanvas.getContext('2d');
-  const simPlayer = { x: 50, y: 88, w: 24, h: 32, vx: 0, vy: 0, onGround: true, face: 1 };
+  const simPlayer = { x: 50, y: 74, w: 32, h: 44, vx: 0, vy: 0, onGround: true, face: 1 };
   const simHeld = { left: false, right: false, jump: false };
   let simAnimId = null;
   let simHasMoved = false;
@@ -799,7 +812,7 @@
     const indicatorEl = $('tut-indicator');
 
     simPlayer.x = 50;
-    simPlayer.y = 88;
+    simPlayer.y = 74;
     simPlayer.vx = 0;
     simPlayer.vy = 0;
     simHeld.left = simHeld.right = simHeld.jump = false;
@@ -892,10 +905,37 @@
         simPlayer.onGround = true;
       }
 
+      // Latar Panduan memakai langit, siluet bukit, rumput, dan lapisan tanah seperti Padang Ilmu.
       simCtx.clearRect(0, 0, 400, 150);
-      simCtx.fillStyle = '#7dd3fc'; simCtx.fillRect(0, 0, 400, 118);
-      simCtx.fillStyle = '#22c55e'; simCtx.fillRect(0, 118, 400, 32);
-      simCtx.fillStyle = '#15803d'; simCtx.fillRect(0, 118, 400, 6);
+      const tutSky = simCtx.createLinearGradient(0, 0, 0, 118);
+      tutSky.addColorStop(0, '#7dd3fc'); tutSky.addColorStop(1, '#d9f1ff');
+      simCtx.fillStyle = tutSky; simCtx.fillRect(0, 0, 400, 118);
+      simCtx.fillStyle = 'rgba(255,255,255,.75)';
+      simCtx.beginPath(); simCtx.ellipse(320, 25, 28, 8, 0, 0, Math.PI * 2); simCtx.fill();
+      simCtx.beginPath(); simCtx.ellipse(338, 22, 15, 7, 0, 0, Math.PI * 2); simCtx.fill();
+      simCtx.fillStyle = '#9bc7bd';
+      simCtx.beginPath(); simCtx.moveTo(0, 112); simCtx.lineTo(45, 94); simCtx.lineTo(92, 108); simCtx.lineTo(146, 88); simCtx.lineTo(205, 108); simCtx.lineTo(265, 92); simCtx.lineTo(330, 107); simCtx.lineTo(400, 91); simCtx.lineTo(400, 120); simCtx.lineTo(0, 120); simCtx.closePath(); simCtx.fill();
+      simCtx.fillStyle = '#8f320f'; simCtx.fillRect(0, 118, 400, 32);
+      simCtx.fillStyle = '#7c2d12'; simCtx.fillRect(0, 133, 400, 17);
+      for (let tx = 9, ti = 0; tx < 400; tx += 28, ti++) {
+        simCtx.fillStyle = ti % 2 ? 'rgba(69,20,8,.28)' : 'rgba(194,65,12,.38)';
+        simCtx.beginPath(); simCtx.ellipse(tx + 8, 133 + (ti % 3) * 4, 11 + (ti % 3) * 2, 3, 0, 0, Math.PI * 2); simCtx.fill();
+      }
+      simCtx.fillStyle = '#596b12'; simCtx.fillRect(0, 117, 400, 7);
+      simCtx.fillStyle = '#a3a61b'; simCtx.fillRect(0, 115, 400, 5);
+      simCtx.fillStyle = '#65a30d';
+      simCtx.beginPath(); simCtx.moveTo(0, 118);
+      for (let gx = 0; gx <= 400; gx += 5) simCtx.lineTo(gx, 115 + Math.sin(gx * .1) * 1.5 + Math.cos(gx * .045));
+      simCtx.lineTo(400, 123); simCtx.lineTo(0, 123); simCtx.closePath(); simCtx.fill();
+      simCtx.fillStyle = '#84cc16';
+      simCtx.beginPath(); simCtx.moveTo(0, 116);
+      for (let gx = 0; gx <= 400; gx += 5) simCtx.lineTo(gx, 113 + Math.sin(gx * .07 + 1) * 1.2 + Math.cos(gx * .033));
+      simCtx.lineTo(400, 120); simCtx.lineTo(0, 120); simCtx.closePath(); simCtx.fill();
+      for (let gx = 6; gx < 400; gx += 13) {
+        const gh = 2 + Math.abs(Math.sin(gx * .23)) * 4;
+        simCtx.strokeStyle = Math.sin(gx) > 0 ? '#a3e635' : '#4d7c0f'; simCtx.lineWidth = 1.2;
+        simCtx.beginPath(); simCtx.moveTo(gx, 115); simCtx.lineTo(gx + Math.sin(gx) * 1.5, 115 - gh); simCtx.stroke();
+      }
 
       if (tutStep === 1) {
         simCtx.fillStyle = '#0f172a';
@@ -938,15 +978,9 @@
       simCtx.fill();
 
       if (playerGender === 'P') {
-        simCtx.fillStyle = '#be185d';
-        simCtx.fillRect(simPlayer.x, simPlayer.y + 12, simPlayer.w, simPlayer.h - 12);
-        simCtx.fillStyle = '#fb7185';
-        simCtx.fillRect(simPlayer.x - 1, simPlayer.y, simPlayer.w + 2, 14);
+        drawFemaleAvatar(simCtx, simPlayer.x, simPlayer.y, simPlayer.w, simPlayer.h, simPlayer.face, false);
       } else {
-        simCtx.fillStyle = '#059669';
-        simCtx.fillRect(simPlayer.x, simPlayer.y + 8, simPlayer.w, simPlayer.h - 8);
-        simCtx.fillStyle = '#dc2626';
-        simCtx.fillRect(simPlayer.x + 2, simPlayer.y, simPlayer.w - 4, 8);
+        drawDetailedAvatar(simCtx, simPlayer.x, simPlayer.y, simPlayer.w, simPlayer.h, simPlayer.face, false);
       }
     }
 
@@ -983,13 +1017,14 @@
     books = L.books.map(([x, y]) => ({ x, y, got: false }));
     blocks = AREAS[i].blocks.map(([x, y, li]) => ({ x, y, w: 34, h: 34, state: 'new', bump: 0, lesson: lessons[li] }));
     popups = []; particles = [];
-    flashA = 0; tele = null; dead = false; gatesOpen = false; won = false; camX = 0;
+    flashA = 0; tele = null; dead = false; gatesOpen = false; won = false; camX = 0; pitDeath = null;
     caseData = caseSeq[i];
-    const order = Math.random() < 0.5 ? ['sugra', 'kubra'] : ['kubra', 'sugra'];
+    // Gerbang Kubra selalu di kiri masjid dan Sugra selalu di kanan masjid.
     doors = [
-      { x: worldW - 100, y: 338, w: 46, h: 72, type: order[0] },
-      { x: worldW - 50,  y: 338, w: 46, h: 72, type: order[1] }
+      { x: L.mosque - 94, y: 338, w: 46, h: 72, type: 'kubra' },
+      { x: L.mosque + 184, y: 338, w: 46, h: 72, type: 'sugra' }
     ];
+    pitDeath = null;
     cardEl.classList.remove('show');
   }
 
@@ -1029,6 +1064,19 @@
       if (e.key >= '1' && e.key <= '4') answer(Number(e.key) - 1);
       return;
     }
+    if (e.key === 'e' || e.key === 'E') {
+      const cx = player.x + player.w / 2;
+      const nearby = doors.find(d => Math.abs(cx - (d.x + d.w / 2)) < 92 && player.y < d.y + d.h && player.y + player.h > d.y);
+      if (nearby) {
+        if (gatesOpen) enterDoor(nearby);
+        else if (lockCd <= 0) {
+          popups.push({ x: cx, y: 300, t: 0, text: 'Selesaikan misi dulu 🔒', color: '#7f1d1d' });
+          lockCd = 1.5;
+        }
+        e.preventDefault();
+      }
+      return;
+    }
     const k = keyMap[e.key];
     if (k) { held[k] = true; e.preventDefault(); }
   });
@@ -1058,7 +1106,25 @@
     btn.addEventListener('contextmenu', e => e.preventDefault());
   });
 
-  canvas.addEventListener('pointerdown', () => { if (won && !modalOpen) newGame(); });
+  canvas.addEventListener('pointerdown', e => {
+    if (won && !modalOpen) { newGame(); return; }
+    if (!gameStarted || modalOpen || isPaused || mode !== 'world') return;
+    const rect = canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * W / rect.width;
+    const py = (e.clientY - rect.top) * H / rect.height;
+    const wx = px + camX;
+    const d = doors.find(g => wx >= g.x - 3 && wx <= g.x + g.w + 3 && py >= g.y - 18 && py <= g.y + g.h + 6);
+    if (!d) return;
+    e.preventDefault();
+    const closeEnough = Math.abs((player.x + player.w / 2) - (d.x + d.w / 2)) < 105 && player.y < d.y + d.h && player.y + player.h > d.y;
+    if (!closeEnough) {
+      popups.push({ x: d.x + d.w / 2, y: d.y - 22, t: 0, text: 'Dekati gerbang terlebih dahulu', color: '#134e4a' });
+    } else if (!gatesOpen) {
+      popups.push({ x: d.x + d.w / 2, y: d.y - 22, t: 0, text: 'Selesaikan misi dulu 🔒', color: '#7f1d1d' });
+    } else {
+      enterDoor(d);
+    }
+  });
 
   // ---------- Modal System ----------
   function showModal(c) {
@@ -1072,7 +1138,7 @@
     };
     set('m-badge', c.badge); set('m-title', c.judul); set('m-arab', c.arab);
     set('m-arti', c.arti); set('m-refleksi', c.isi); set('m-sumber', c.sumber);
-    okBtn.textContent = c.tombol;
+    okBtn.textContent = c.tombol || 'Paham';
     modalEl.classList.add('open');
     modalEl.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -1371,6 +1437,17 @@
 
   function update(dt) {
     if (!gameStarted || isPaused || tutorialOpen) return;
+    if (pitDeath) {
+      pitDeath.t += dt;
+      player.vx = 0;
+      player.vy = 0;
+      player.y = pitDeath.startY + Math.min(24, pitDeath.t * 28);
+      if (pitDeath.t >= 0.9) {
+        pitDeath = null;
+        fall();
+      }
+      return;
+    }
     const locked = modalOpen || !!tele || dead;
     if (player.inv > 0) player.inv -= dt;
 
@@ -1424,7 +1501,21 @@
       }
     }
 
-    if (player.y > H + 30 && !dead) fall();
+    // Saat kaki avatar mencapai permukaan jurang, jalankan animasi bahaya sebelum mengurangi HP.
+    const playerCenterX = player.x + player.w / 2;
+    const pitUnderPlayer = pits.find(([a, b]) => playerCenterX > a + 4 && playerCenterX < b - 4);
+    if (pitUnderPlayer && !player.onGround && player.vy >= 0 && player.y + player.h >= 402 && !dead) {
+      pitDeath = {
+        t: 0,
+        type: areaIdx === 0 ? 'spikes' : 'fire',
+        startY: Math.max(player.y, 368),
+        x: player.x
+      };
+      player.y = pitDeath.startY;
+      player.vx = 0;
+      player.vy = 0;
+    }
+    if (player.y > H + 30 && !dead && !pitDeath) fall();
 
     for (const c of cps) {
       if (!c.on && player.x > c.x) {
@@ -1449,17 +1540,12 @@
 
     const cx = player.x + player.w / 2;
     for (const d of doors) {
-      if (cx > d.x && cx < d.x + d.w && player.y < d.y + d.h && player.y + player.h > d.y) {
-        if (!gatesOpen) {
-          if (lockCd <= 0) {
-            popups.push({ x: player.x, y: 300, t: 0, text: 'Selesaikan misi dulu 🔒', color: '#7f1d1d' });
-            lockCd = 2;
-          }
-        } else if (!tele && !dead && !modalOpen && player.inv <= 0 && player.kb <= 0) {
-          enterDoor(d);
-        }
-        break;
+      const nearDoor = Math.abs(cx - (d.x + d.w / 2)) < 64 && player.y < d.y + d.h && player.y + player.h > d.y;
+      if (nearDoor && !gatesOpen && lockCd <= 0 && !dead && !tele && !modalOpen) {
+        popups.push({ x: d.x + d.w / 2, y: 300, t: 0, text: 'Selesaikan misi dulu 🔒', color: '#7f1d1d' });
+        lockCd = 2;
       }
+      // Gerbang tidak lagi otomatis membawa pemain masuk. Gunakan E atau ketuk gerbang.
     }
   }
 
@@ -1473,7 +1559,13 @@
     if (laser) { laser.t += dt; if (laser.t > 0.5) laser = null; }
     if (boss.dying > 0 && boss.dying < 1) {
       boss.dying = Math.min(1, boss.dying + dt / 1.4);
-      if (Math.random() < 0.7) burst(560 + Math.random() * 120, 130 + Math.random() * 100, Math.random() < 0.5 ? '#fde047' : '#c4b5fd', 3);
+      // Ledakan beruntun menyelimuti bos sebelum ia jatuh dan menghilang.
+      if (Math.random() < 0.88) {
+        const colors = ['#fde047', '#fb923c', '#ef4444', '#ffffff', '#c4b5fd'];
+        const bx = 620 + (Math.random() - .5) * 108;
+        const by = 165 + Math.random() * 76 + boss.dying * 80;
+        burst(bx, by, colors[Math.floor(Math.random() * colors.length)], 4 + Math.floor(Math.random() * 3));
+      }
     }
   }
 
@@ -1549,10 +1641,223 @@
     }
     ctx.restore();
 
-    ctx.fillStyle = areaIdx === 1 ? pal[2] : '#134e4a';
-    ctx.font = 'bold 12px system-ui, sans-serif';
+    // Label gerbang dibuat terang dengan outline gelap agar kontras di kedua stage.
+    ctx.font = 'bold 13px system-ui, sans-serif';
     ctx.textAlign = 'center';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#111827';
+    ctx.strokeText(cap(d.type), cx, d.y - 9);
+    ctx.fillStyle = d.type === 'sugra' ? '#86efac' : '#fde047';
     ctx.fillText(cap(d.type), cx, d.y - 9);
+    if (gatesOpen && Math.abs((player.x + player.w / 2) - cx) < 105) {
+      ctx.fillStyle = '#ecfdf5';
+      ctx.font = 'bold 10px system-ui, sans-serif';
+      ctx.fillText('E / KETUK', cx, d.y + d.h - 12);
+    }
+  }
+
+  // Menggambar avatar laki-laki bergaya pixel-art dengan atribut lengkap.
+  // Fungsi ini dipakai di arena utama dan tutorial agar tampilannya konsisten.
+  function drawDetailedAvatar(targetCtx, x, y, width, height, facing = 1, drawShadow = true) {
+    targetCtx.save();
+    targetCtx.translate(x, y);
+    targetCtx.scale(width / 32, height / 44);
+
+    const shape = (sx, sy, sw, sh, radius, color) => {
+      targetCtx.fillStyle = color;
+      targetCtx.beginPath();
+      if (targetCtx.roundRect) targetCtx.roundRect(sx, sy, sw, sh, radius);
+      else targetCtx.rect(sx, sy, sw, sh);
+      targetCtx.fill();
+    };
+
+    if (drawShadow) {
+      targetCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      targetCtx.beginPath();
+      targetCtx.ellipse(16, 43, 13, 3.5, 0, 0, Math.PI * 2);
+      targetCtx.fill();
+    }
+
+    // Celana panjang hitam dan dua kaki.
+    shape(7, 27, 18, 13, 2, '#030712');
+    shape(8, 29, 7, 10, 1, '#111827');
+    shape(17, 29, 7, 10, 1, '#111827');
+    targetCtx.fillStyle = '#374151';
+    targetCtx.fillRect(15, 30, 1, 8);
+    targetCtx.fillRect(8, 28, 16, 1);
+
+    // Sepatu hitam dengan sol agar terlihat jelas.
+    shape(4, 38, 12, 5, 2, '#030712');
+    shape(16, 38, 12, 5, 2, '#030712');
+    targetCtx.fillStyle = '#4b5563';
+    targetCtx.fillRect(5, 42, 10, 1);
+    targetCtx.fillRect(17, 42, 10, 1);
+    targetCtx.fillStyle = '#9ca3af';
+    targetCtx.fillRect(7, 39, 4, 1);
+    targetCtx.fillRect(19, 39, 4, 1);
+
+    // Tangan dan lengan berada di belakang badan.
+    shape(2, 18, 6, 9, 2, '#047857');
+    shape(24, 18, 6, 9, 2, '#047857');
+    shape(3, 25, 4, 4, 2, '#eab08c');
+    shape(25, 25, 4, 4, 2, '#eab08c');
+
+    // Leher dan baju hijau.
+    shape(13, 13, 6, 5, 1, '#d99a70');
+    shape(5, 15, 22, 16, 3, '#059669');
+    shape(7, 17, 18, 11, 2, '#10b981');
+    targetCtx.fillStyle = '#047857';
+    targetCtx.beginPath();
+    targetCtx.moveTo(12, 15);
+    targetCtx.lineTo(16, 19);
+    targetCtx.lineTo(20, 15);
+    targetCtx.closePath();
+    targetCtx.fill();
+    targetCtx.fillStyle = '#34d399';
+    targetCtx.fillRect(9, 21, 2, 5);
+    targetCtx.fillRect(21, 21, 2, 5);
+
+    // Kepala, telinga, dan wajah.
+    shape(5, 1, 22, 16, 4, '#f4c29a');
+    shape(2, 7, 4, 5, 2, '#eab08c');
+    shape(26, 7, 4, 5, 2, '#eab08c');
+    targetCtx.fillStyle = '#c9825b';
+    targetCtx.fillRect(3, 9, 2, 2);
+    targetCtx.fillRect(27, 9, 2, 2);
+
+    // Alis dan mata putih dengan pupil yang mengikuti arah gerak.
+    targetCtx.fillStyle = '#713f2a';
+    targetCtx.fillRect(9, 5, 5, 1.5);
+    targetCtx.fillRect(18, 5, 5, 1.5);
+    shape(9, 6.5, 5, 4.5, 1, '#ffffff');
+    shape(18, 6.5, 5, 4.5, 1, '#ffffff');
+    targetCtx.fillStyle = '#111827';
+    const pupilOffset = facing >= 0 ? 2 : 0;
+    targetCtx.fillRect(10 + pupilOffset, 7.5, 2, 2.5);
+    targetCtx.fillRect(19 + pupilOffset, 7.5, 2, 2.5);
+
+    // Hidung kecil, senyum, dan detail pipi.
+    targetCtx.fillStyle = '#cf8b65';
+    targetCtx.beginPath();
+    const noseX = facing >= 0 ? 16 : 14;
+    targetCtx.moveTo(noseX, 9);
+    targetCtx.lineTo(noseX + (facing >= 0 ? 3 : -1), 11);
+    targetCtx.lineTo(noseX, 12);
+    targetCtx.closePath();
+    targetCtx.fill();
+    targetCtx.fillStyle = '#e99b8c';
+    targetCtx.fillRect(7, 11, 2, 1);
+    targetCtx.fillRect(23, 11, 2, 1);
+    targetCtx.strokeStyle = '#7c2d12';
+    targetCtx.lineWidth = 1;
+    targetCtx.beginPath();
+    targetCtx.moveTo(13, 13);
+    targetCtx.quadraticCurveTo(16, 15, 19, 13);
+    targetCtx.stroke();
+
+    // Topi merah: bagian kubah, lis, dan pinggiran topi.
+    shape(5, -5, 22, 7, 2, '#b91c1c');
+    shape(7, -4, 18, 3, 1, '#ef4444');
+    shape(2, 0, 28, 3, 1, '#dc2626');
+    targetCtx.fillStyle = '#f87171';
+    targetCtx.fillRect(8, -3, 12, 1);
+
+    targetCtx.restore();
+  }
+
+  // Avatar perempuan: hijab pink, wajah lengkap, gamis pink, dan sepatu putih.
+  // Digunakan konsisten di arena utama dan tutorial.
+  function drawFemaleAvatar(targetCtx, x, y, width, height, facing = 1, drawShadow = true) {
+    targetCtx.save();
+    targetCtx.translate(x, y);
+    targetCtx.scale(width / 32, height / 44);
+
+    const shape = (sx, sy, sw, sh, radius, color) => {
+      targetCtx.fillStyle = color;
+      targetCtx.beginPath();
+      if (targetCtx.roundRect) targetCtx.roundRect(sx, sy, sw, sh, radius);
+      else targetCtx.rect(sx, sy, sw, sh);
+      targetCtx.fill();
+    };
+
+    if (drawShadow) {
+      targetCtx.fillStyle = 'rgba(0,0,0,.2)';
+      targetCtx.beginPath();
+      targetCtx.ellipse(16, 43, 13, 3.5, 0, 0, Math.PI * 2);
+      targetCtx.fill();
+    }
+
+    // Sepatu putih dengan sol abu-abu muda.
+    shape(4, 38, 12, 5, 2, '#f8fafc');
+    shape(16, 38, 12, 5, 2, '#f8fafc');
+    targetCtx.fillStyle = '#cbd5e1';
+    targetCtx.fillRect(5, 42, 10, 1);
+    targetCtx.fillRect(17, 42, 10, 1);
+
+    // Gamis pink berbentuk melebar di bagian bawah.
+    targetCtx.fillStyle = '#ec4899';
+    targetCtx.beginPath();
+    targetCtx.moveTo(9, 17);
+    targetCtx.lineTo(23, 17);
+    targetCtx.lineTo(29, 39);
+    targetCtx.quadraticCurveTo(16, 42, 3, 39);
+    targetCtx.closePath();
+    targetCtx.fill();
+    targetCtx.fillStyle = '#f9a8d4';
+    targetCtx.beginPath();
+    targetCtx.moveTo(12, 19); targetCtx.lineTo(16, 22); targetCtx.lineTo(20, 19);
+    targetCtx.lineTo(22, 35); targetCtx.lineTo(10, 35); targetCtx.closePath();
+    targetCtx.fill();
+    targetCtx.strokeStyle = '#be185d'; targetCtx.lineWidth = 1;
+    targetCtx.beginPath(); targetCtx.moveTo(16, 22); targetCtx.lineTo(16, 38); targetCtx.stroke();
+
+    // Siluet hijab pink membingkai wajah.
+    targetCtx.fillStyle = '#f472b6';
+    targetCtx.beginPath();
+    targetCtx.moveTo(5, 11);
+    targetCtx.quadraticCurveTo(4, -1, 16, -1);
+    targetCtx.quadraticCurveTo(29, -1, 27, 12);
+    targetCtx.lineTo(27, 22);
+    targetCtx.quadraticCurveTo(22, 27, 18, 23);
+    targetCtx.lineTo(16, 19);
+    targetCtx.lineTo(13, 24);
+    targetCtx.quadraticCurveTo(7, 27, 5, 21);
+    targetCtx.closePath();
+    targetCtx.fill();
+    targetCtx.strokeStyle = '#db2777'; targetCtx.lineWidth = 1.2; targetCtx.stroke();
+
+    // Telinga, wajah, alis, dan mata.
+    shape(6, 8, 4, 6, 2, '#eab08c');
+    shape(22, 8, 4, 6, 2, '#eab08c');
+    shape(8, 3, 16, 17, 5, '#f4c29a');
+    targetCtx.fillStyle = '#9a5b45';
+    targetCtx.fillRect(10, 7, 4, 1);
+    targetCtx.fillRect(18, 7, 4, 1);
+    shape(10, 8, 4, 4, 1, '#ffffff');
+    shape(18, 8, 4, 4, 1, '#ffffff');
+    targetCtx.fillStyle = '#111827';
+    const pupilShift = facing >= 0 ? 1.5 : 0;
+    targetCtx.fillRect(11 + pupilShift, 9, 2, 2.5);
+    targetCtx.fillRect(19 + pupilShift, 9, 2, 2.5);
+    // Hidung kecil dan senyum.
+    targetCtx.fillStyle = '#cf8b65';
+    targetCtx.beginPath(); targetCtx.moveTo(15, 11); targetCtx.lineTo(17, 13); targetCtx.lineTo(15, 14); targetCtx.closePath(); targetCtx.fill();
+    targetCtx.fillStyle = '#e99b8c';
+    targetCtx.fillRect(9, 13, 2, 1); targetCtx.fillRect(21, 13, 2, 1);
+    targetCtx.strokeStyle = '#9f1239'; targetCtx.lineWidth = 1;
+    targetCtx.beginPath(); targetCtx.moveTo(13, 16); targetCtx.quadraticCurveTo(16, 18, 19, 16); targetCtx.stroke();
+
+    // Lipatan hijab pada bahu dan penutup bagian atas kepala.
+    targetCtx.fillStyle = '#ec4899';
+    targetCtx.beginPath();
+    targetCtx.moveTo(7, 15); targetCtx.lineTo(11, 19); targetCtx.lineTo(8, 25); targetCtx.lineTo(5, 21); targetCtx.closePath(); targetCtx.fill();
+    targetCtx.beginPath();
+    targetCtx.moveTo(25, 15); targetCtx.lineTo(21, 19); targetCtx.lineTo(24, 25); targetCtx.lineTo(27, 21); targetCtx.closePath(); targetCtx.fill();
+    targetCtx.fillStyle = '#f9a8d4';
+    targetCtx.beginPath(); targetCtx.moveTo(10, 2); targetCtx.quadraticCurveTo(16, -2, 22, 2); targetCtx.lineTo(20, 4); targetCtx.quadraticCurveTo(16, 2, 12, 4); targetCtx.closePath(); targetCtx.fill();
+
+    targetCtx.restore();
   }
 
   function drawPlayer(t, alpha) {
@@ -1566,63 +1871,9 @@
     ctx.fill();
 
     if (playerGender === 'P') {
-      ctx.fillStyle = '#be185d';
-      ctx.beginPath();
-      ctx.moveTo(player.x + 2, player.y + 16);
-      ctx.lineTo(player.x + player.w - 2, player.y + 16);
-      ctx.lineTo(player.x + player.w + 2, player.y + player.h);
-      ctx.lineTo(player.x - 2, player.y + player.h);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = '#9d174d';
-      ctx.fillRect(player.x + 1, player.y + 26, player.w - 2, 4);
-
-      ctx.fillStyle = '#fb7185';
-      rr(player.x - 2, player.y - 6, player.w + 4, 28, [14, 14, 8, 8]);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(player.x - 3, player.y + 12);
-      ctx.lineTo(player.x + player.w + 3, player.y + 12);
-      ctx.lineTo(player.x + player.w + 1, player.y + 24);
-      ctx.lineTo(player.x - 1, player.y + 24);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = '#fde047';
-      rr(cx - 9, player.y + 3, 18, 12, 5);
-      ctx.fill();
-
-      const eyeOffsetX = player.face === 1 ? 3 : -3;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(cx + eyeOffsetX - 6, player.y + 5, 4, 5);
-      ctx.fillRect(cx + eyeOffsetX + 2, player.y + 5, 4, 5);
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(cx + eyeOffsetX - 5 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
-      ctx.fillRect(cx + eyeOffsetX + 3 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
-
+      drawFemaleAvatar(ctx, player.x, player.y, player.w, player.h, player.face, false);
     } else {
-      ctx.fillStyle = '#059669';
-      ctx.fillRect(player.x, player.y + 10, player.w, player.h - 10);
-      ctx.fillStyle = '#047857';
-      ctx.fillRect(player.x, player.y + 30, player.w, 4);
-      ctx.fillStyle = '#064e3b';
-      ctx.fillRect(player.x + 2, player.y + 34, player.w - 4, 10);
-
-      ctx.fillStyle = '#fde047';
-      ctx.fillRect(player.x + 3, player.y + 2, player.w - 6, 14);
-
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(player.x + 2, player.y - 6, player.w - 4, 9);
-
-      const eyeOffsetX = player.face === 1 ? 4 : -4;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(cx + eyeOffsetX - 7, player.y + 5, 5, 5);
-      ctx.fillRect(cx + eyeOffsetX + 2, player.y + 5, 5, 5);
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(cx + eyeOffsetX - 6 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
-      ctx.fillRect(cx + eyeOffsetX + 3 + (player.face === 1 ? 1 : 0), player.y + 6, 3, 3);
+      drawDetailedAvatar(ctx, player.x, player.y, player.w, player.h, player.face, false);
     }
 
     ctx.restore();
@@ -1641,6 +1892,68 @@
     ctx.lineTo(W + 20, H); ctx.closePath(); ctx.fill();
   }
 
+  // Pohon kelapa bergaya ilustrasi kartun untuk Padang Ilmu.
+  function drawPalmTree(x, baseY, scale = 1) {
+    ctx.save(); ctx.translate(x, baseY); ctx.scale(scale, scale);
+    // Bayangan di pangkal pohon.
+    ctx.fillStyle = 'rgba(15,23,42,.15)';
+    ctx.beginPath(); ctx.ellipse(0, 0, 19, 4, 0, 0, Math.PI * 2); ctx.fill();
+    // Batang melengkung dengan segmen berwarna cokelat.
+    ctx.fillStyle = '#8b4513';
+    ctx.beginPath(); ctx.moveTo(-8, 0); ctx.quadraticCurveTo(-3, -30, -18, -57); ctx.quadraticCurveTo(-27, -73, -35, -88);
+    ctx.lineTo(-22, -84); ctx.quadraticCurveTo(-14, -66, -8, -54); ctx.quadraticCurveTo(7, -28, 7, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#a95c20'; ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+      const yy = -8 - i * 10;
+      ctx.beginPath(); ctx.moveTo(-6 - i * 2.7, yy); ctx.lineTo(5 - i * 1.4, yy - 3); ctx.stroke();
+    }
+    // Daun-daun panjang runcing mengembang dari mahkota.
+    const leaves = [
+      [-58,-96,-30,-111,-5,-91], [-57,-91,-66,-105,-38,-92],
+      [-39,-100,-35,-119,-18,-92], [-31,-96,-7,-117,1,-86],
+      [-36,-88,-2,-96,7,-78], [-39,-88,-11,-76,9,-77],
+      [-43,-91,-24,-67,-12,-70], [-45,-90,-47,-60,-31,-75],
+      [-48,-93,-63,-76,-44,-82], [-41,-94,-70,-94,-46,-86]
+    ];
+    leaves.forEach((a, i) => {
+      ctx.fillStyle = i % 2 ? '#3f8f16' : '#65b51b';
+      ctx.beginPath(); ctx.moveTo(-34, -91); ctx.quadraticCurveTo(a[0], a[1], a[2], a[3]); ctx.quadraticCurveTo(a[3] + (a[4]-a[2])*.45, a[3] + (a[5]-a[3])*.45, a[4], a[5]); ctx.quadraticCurveTo(a[1], a[2], -34, -91); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(26,96,12,.45)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(-34, -91); ctx.quadraticCurveTo((a[0]+a[2])/2, (a[1]+a[3])/2, a[4], a[5]); ctx.stroke();
+    });
+    // Kelapa kecil di bawah mahkota.
+    ctx.fillStyle = '#7c3f11';
+    [[-38,-86],[-31,-84],[-34,-79]].forEach(([cx,cy]) => { ctx.beginPath(); ctx.ellipse(cx,cy,3.5,4.2,.3,0,Math.PI*2); ctx.fill(); });
+    ctx.restore();
+  }
+
+  // Pohon kering bercabang untuk Lembah Hikmah.
+  function drawDryTree(x, baseY, scale = 1) {
+    ctx.save(); ctx.translate(x, baseY); ctx.scale(scale, scale);
+    ctx.fillStyle = 'rgba(15,23,42,.16)';
+    ctx.beginPath(); ctx.ellipse(0, 0, 24, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#92400e'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(-4,-35,1,-64); ctx.quadraticCurveTo(7,-87,-2,-111); ctx.stroke();
+    ctx.strokeStyle = '#b97719'; ctx.lineWidth = 3.2; ctx.beginPath(); ctx.moveTo(-2,-6); ctx.quadraticCurveTo(3,-44,4,-65); ctx.quadraticCurveTo(8,-89,-1,-107); ctx.stroke();
+    const branches = [
+      [0,-27,-15,-40,-29,-39],[-15,-40,-27,-52,-36,-49],[-17,-42,-20,-57,-29,-62],
+      [1,-47,18,-56,25,-73],[18,-56,32,-60,39,-69],[23,-65,22,-78,29,-85],
+      [3,-65,-11,-75,-17,-88],[-11,-75,-13,-88,-22,-96],
+      [2,-82,14,-91,16,-103],[14,-91,27,-94,34,-103],[-1,-98,-8,-109,-6,-120],
+      [0,-37,13,-43,20,-47],[13,-43,22,-43,29,-49],[-3,-31,-16,-31,-24,-27]
+    ];
+    branches.forEach((b,i) => {
+      ctx.strokeStyle = i%3===0 ? '#78350f' : '#a16207';
+      ctx.lineWidth = i<5 ? 4.4 : 3.1;
+      ctx.beginPath(); ctx.moveTo(b[0],b[1]); ctx.quadraticCurveTo((b[0]+b[2])/2-2,(b[1]+b[3])/2,b[2],b[3]); ctx.lineTo(b[4],b[5]); ctx.stroke();
+      if (i%3===1) { ctx.lineWidth = 1.2; ctx.strokeStyle = '#d08a22'; ctx.beginPath(); ctx.moveTo(b[0],b[1]); ctx.lineTo(b[2],b[3]); ctx.stroke(); }
+    });
+    // Akar terbuka memberi siluet pohon tua yang khas.
+    ctx.strokeStyle = '#92400e'; ctx.lineWidth = 3;
+    [[0,0,-18,4],[-1,0,-11,7],[1,0,15,5],[0,0,23,2]].forEach(a=>{ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.quadraticCurveTo(a[2]*.45,4,a[2],a[3]);ctx.stroke();});
+    ctx.restore();
+  }
+
   function drawMosque(x, dusk) {
     const b = 410, wall = dusk ? '#e7c9a0' : '#f4efe0';
     ctx.fillStyle = wall; ctx.fillRect(x, b - 64, 150, 64);
@@ -1655,6 +1968,157 @@
     ctx.fillStyle = '#134e4a'; rr(x + 59, b - 42, 32, 42, [16, 16, 0, 0]); ctx.fill();
     ctx.fillStyle = dusk ? '#fde68a' : '#7dd3fc';
     [x + 18, x + 112].forEach(wx => { rr(wx, b - 46, 20, 26, [10, 10, 0, 0]); ctx.fill(); });
+  }
+
+  function drawHazardPit(a, b, t, dusk) {
+    const w = b - a;
+    const pitGrad = ctx.createLinearGradient(0, 405, 0, H);
+    pitGrad.addColorStop(0, dusk ? '#7f1d1d' : '#3f0b0b');
+    pitGrad.addColorStop(1, '#130806');
+    ctx.fillStyle = pitGrad;
+    ctx.fillRect(a, 405, w, H - 405);
+
+    if (!dusk) {
+      // Duri-duri tajam yang menjulang dari dasar jurang pada stage Padang Ilmu.
+      for (let x = a - 2, i = 0; x < b + 20; x += 17, i++) {
+        const tipY = 402 + 3 * Math.abs(Math.sin(i * 1.71 + a * 0.01));
+        const baseY = 451;
+        ctx.fillStyle = i % 2 ? '#9ca3af' : '#d1d5db';
+        ctx.beginPath();
+        ctx.moveTo(x, baseY);
+        ctx.lineTo(x + 8.5, tipY);
+        ctx.lineTo(x + 17, baseY);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#f3f4f6'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x + 8.5, tipY); ctx.lineTo(x + 10, baseY - 5); ctx.stroke();
+        ctx.fillStyle = '#6b7280';
+        ctx.fillRect(x + 1, 445, 15, 5);
+      }
+    } else {
+      // Api bergelombang pada jurang stage Lembah Hikmah.
+      for (let x = a - 4, i = 0; x < b + 18; x += 19, i++) {
+        const sway = Math.sin(t / 125 + i * 1.8 + a * 0.01);
+        const tipY = 389 + Math.abs(sway) * 13;
+        ctx.fillStyle = i % 2 ? '#b91c1c' : '#ef4444';
+        ctx.beginPath(); ctx.moveTo(x, 452); ctx.lineTo(x + 3, 427);
+        ctx.lineTo(x + 5 + sway * 5, tipY + 9); ctx.lineTo(x + 12, 421);
+        ctx.lineTo(x + 17, 452); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = i % 2 ? '#fb923c' : '#f97316';
+        ctx.beginPath(); ctx.moveTo(x + 4, 452); ctx.lineTo(x + 7 + sway * 4, tipY + 17);
+        ctx.lineTo(x + 11, 435); ctx.lineTo(x + 15, 452); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath(); ctx.moveTo(x + 7, 451); ctx.lineTo(x + 8 + sway * 3, tipY + 25);
+        ctx.lineTo(x + 11, 451); ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(251,146,60,.28)';
+      ctx.fillRect(a, 436, w, 14);
+    }
+  }
+
+  function drawPitDeathOverlay(t) {
+    if (!pitDeath) return;
+    const p = pitDeath;
+    ctx.save();
+    if (p.type === 'spikes') {
+      // Beberapa ujung duri melintas di depan avatar agar terlihat tertusuk.
+      ctx.strokeStyle = '#f3f4f6'; ctx.lineWidth = 2;
+      for (let i = -1; i <= 1; i++) {
+        const x = player.x + player.w / 2 + i * 10;
+        ctx.fillStyle = '#d1d5db';
+        ctx.beginPath(); ctx.moveTo(x - 6, 435); ctx.lineTo(x + (p.t < .45 ? 0 : 2), 399 + Math.sin(t / 70 + i) * 2); ctx.lineTo(x + 7, 435); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x + (p.t < .45 ? 0 : 2), 399 + Math.sin(t / 70 + i) * 2); ctx.lineTo(x + 2, 430); ctx.stroke();
+      }
+      if (p.t > .25) {
+        ctx.fillStyle = 'rgba(127,29,29,' + Math.min(.5, (p.t - .25) * .8) + ')';
+        ctx.fillRect(player.x + 6, player.y + 13, player.w - 12, 20);
+      }
+    } else {
+      const flicker = Math.abs(Math.sin(t / 38));
+      ctx.globalAlpha = .5 + flicker * .35;
+      for (let i = 0; i < 7; i++) {
+        const x = player.x - 7 + i * 7;
+        const top = player.y + 5 + Math.abs(Math.sin(t / 65 + i * 1.4)) * 20;
+        ctx.fillStyle = i % 2 ? '#f97316' : '#ef4444';
+        ctx.beginPath(); ctx.moveTo(x, player.y + player.h + 5); ctx.lineTo(x + 3, top + 10); ctx.lineTo(x + 5 + Math.sin(t / 45 + i) * 2, top); ctx.lineTo(x + 9, player.y + player.h + 5); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath(); ctx.moveTo(x + 3, player.y + player.h + 2); ctx.lineTo(x + 5, top + 13); ctx.lineTo(x + 7, player.y + player.h + 2); ctx.closePath(); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(239,68,68,' + (.1 + flicker * .22) + ')';
+      ctx.fillRect(player.x - 2, player.y - 2, player.w + 4, player.h + 4);
+    }
+    ctx.restore();
+  }
+
+  function drawGroundSegment(p, t, dusk) {
+    const { x, y, w, h } = p;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y - 9, w, h + 9); ctx.clip();
+
+    if (!dusk) {
+      // Tanah rumput: lapisan hijau, jalur lumut kekuningan, dan tanah cokelat bertekstur.
+      ctx.fillStyle = '#8f320f'; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#7c2d12'; ctx.fillRect(x, y + 21, w, h - 21);
+      ctx.fillStyle = '#a33a12'; ctx.fillRect(x, y + 13, w, 11);
+      for (let xx = x - 8, i = 0; xx < x + w + 24; xx += 34, i++) {
+        const cy = y + 19 + (i % 3) * 6;
+        ctx.fillStyle = i % 2 ? 'rgba(69,20,8,.28)' : 'rgba(194,65,12,.42)';
+        ctx.beginPath(); ctx.ellipse(xx + 13, cy, 15 + (i % 4) * 3, 5 + (i % 2) * 2, Math.sin(i) * .12, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(60,20,7,.25)';
+        ctx.beginPath(); ctx.ellipse(xx + 26, y + 34, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#596b12'; ctx.fillRect(x, y + 7, w, 7);
+      ctx.fillStyle = '#a3a61b'; ctx.fillRect(x, y + 4, w, 5);
+      ctx.fillStyle = '#65a30d';
+      ctx.beginPath(); ctx.moveTo(x, y + 5);
+      for (let xx = x; xx <= x + w + 5; xx += 6) {
+        const edge = y + 2 + Math.sin(xx * .09) * 2 + Math.cos(xx * .041) * 1.5;
+        ctx.lineTo(xx, edge);
+      }
+      ctx.lineTo(x + w, y + 11); ctx.lineTo(x, y + 11); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#84cc16';
+      ctx.beginPath(); ctx.moveTo(x, y + 2);
+      for (let xx = x; xx <= x + w + 5; xx += 6) {
+        const edge = y + Math.sin(xx * .07 + 1) * 2 + Math.cos(xx * .033) * 1.5;
+        ctx.lineTo(xx, edge);
+      }
+      ctx.lineTo(x + w, y + 6); ctx.lineTo(x, y + 6); ctx.closePath(); ctx.fill();
+      for (let xx = x + 4; xx < x + w; xx += 15) {
+        const height = 2 + Math.abs(Math.sin(xx * .23)) * 5;
+        ctx.strokeStyle = Math.sin(xx) > 0 ? '#a3e635' : '#4d7c0f'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(xx, y + 3); ctx.lineTo(xx + Math.sin(xx) * 2, y - height); ctx.stroke();
+      }
+    } else {
+      // Tanah Lembah Hikmah: permukaan pasir retak dan lapisan tanah merah beralur.
+      ctx.fillStyle = '#8b1e16'; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#7f1d1d'; ctx.fillRect(x, y + 25, w, h - 25);
+      for (let xx = x - 4, i = 0; xx < x + w + 35; xx += 25, i++) {
+        const base = y + 12;
+        ctx.fillStyle = i % 2 ? '#991b1b' : '#b91c1c';
+        ctx.beginPath(); ctx.moveTo(xx, base); ctx.lineTo(xx + 5, y + 20);
+        ctx.lineTo(xx + 3 + Math.sin(i * 2) * 4, y + 31); ctx.lineTo(xx + 15, y + 38);
+        ctx.lineTo(xx + 20, y + 25); ctx.lineTo(xx + 23, base); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = i % 2 ? 'rgba(69,10,10,.35)' : 'rgba(248,113,113,.23)';
+        ctx.fillRect(xx + 7, y + 16, 4, 18);
+      }
+      const sand = ctx.createLinearGradient(0, y - 4, 0, y + 16);
+      sand.addColorStop(0, '#f8d18b'); sand.addColorStop(1, '#f59e0b');
+      ctx.fillStyle = sand;
+      ctx.beginPath(); ctx.moveTo(x, y + 1);
+      for (let xx = x; xx <= x + w + 6; xx += 10) ctx.lineTo(xx, y - 2 + Math.sin(xx * .045) * 2 + Math.cos(xx * .021) * 1.5);
+      ctx.lineTo(x + w, y + 14);
+      for (let xx = x + w; xx >= x - 4; xx -= 10) ctx.lineTo(xx, y + 10 + Math.sin(xx * .04 + 1) * 2);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#d97706'; ctx.fillRect(x, y + 11, w, 4);
+      ctx.strokeStyle = '#92400e'; ctx.lineWidth = 1.4;
+      for (let xx = x + 16; xx < x + w - 25; xx += 58) {
+        const cy = y + 2 + Math.sin(xx * .1) * 2;
+        ctx.beginPath(); ctx.moveTo(xx, cy); ctx.lineTo(xx + 12, cy + 2); ctx.lineTo(xx + 20, cy + 7); ctx.lineTo(xx + 30, cy + 6); ctx.stroke();
+      }
+      ctx.fillStyle = '#fcd34d';
+      ctx.beginPath(); ctx.moveTo(x, y + 1); ctx.lineTo(x + w, y - 1); ctx.lineTo(x + w, y + 3); ctx.lineTo(x, y + 5); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
   }
 
   function drawWorld(t) {
@@ -1711,36 +2175,57 @@
     ctx.translate(-camX, 0);
 
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for (const [a, b] of pits) {
-      const pg = ctx.createLinearGradient(0, 410, 0, H);
-      pg.addColorStop(0, dusk ? '#991b1b' : '#292524'); pg.addColorStop(1, '#0c0a09');
-      ctx.fillStyle = pg; ctx.fillRect(a, 410, b - a, 40);
-      ctx.fillStyle = 'rgba(251,146,60,' + (0.35 + 0.25 * Math.sin(t / 250 + a)) + ')';
-      ctx.fillRect(a, 436, b - a, 14);
-      ctx.font = '22px system-ui, sans-serif';
-      ctx.fillText('⚠️', (a + b) / 2, 392);
-    }
+    for (const [a, b] of pits) drawHazardPit(a, b, t, dusk);
 
     drawMosque(L.mosque, dusk);
-    ctx.font = '40px system-ui, sans-serif';
-    for (let x = 90; x < worldW - 130; x += 230) {
-      if (grounded(x) && (x < L.mosque - 40 || x > L.mosque + 200)) ctx.fillText('🌴', x, 388);
+    // Pohon ditempatkan di segmen tanah yang dapat dipijak, menjauhi area masjid.
+    for (let x = 105, treeIndex = 0; x < worldW - 130; x += 300, treeIndex++) {
+      if (grounded(x) && (x < L.mosque - 55 || x > L.mosque + 215)) {
+        if (dusk) drawDryTree(x, 407, treeIndex % 2 ? .78 : .9);
+        else drawPalmTree(x, 407, treeIndex % 2 ? .82 : .95);
+      }
     }
 
-    ctx.font = 'bold 12px system-ui, sans-serif';
     for (const [x, txt] of L.signs) {
-      const w = ctx.measureText(txt).width + 18;
-      ctx.fillStyle = '#78350f'; ctx.fillRect(x - 2, 372, 4, 38);
-      ctx.fillStyle = '#fde68a'; rr(x - w / 2, 350, w, 24, 6); ctx.fill();
-      ctx.strokeStyle = '#92400e'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.fillStyle = '#451a03'; ctx.fillText(txt, x, 362);
+      // Papan kayu sengaja dibiarkan kosong; isi materi tampil sebagai pop-up di atasnya.
+      // Papan diperkecil dan tiang diperpanjang agar proporsional serta tampak kokoh.
+      ctx.fillStyle = '#4b2616'; ctx.fillRect(x - 3, 375, 6, 35);
+      ctx.fillStyle = '#6b351b'; ctx.fillRect(x - 5, 383, 10, 5);
+      const boardGrad = ctx.createLinearGradient(x - 40, 0, x + 40, 0);
+      boardGrad.addColorStop(0, '#783f20'); boardGrad.addColorStop(.5, '#a16232'); boardGrad.addColorStop(1, '#713718');
+      ctx.fillStyle = boardGrad; rr(x - 38, 353, 76, 22, 4); ctx.fill();
+      ctx.strokeStyle = '#4a2412'; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.strokeStyle = 'rgba(245, 190, 110, .45)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x - 31, 359); ctx.lineTo(x + 30, 359); ctx.moveTo(x - 28, 369); ctx.lineTo(x + 28, 369); ctx.stroke();
+
+      if (!player.hidden && Math.abs((player.x + player.w / 2) - x) < 132) {
+        const maxTextWidth = 208, lines = [];
+        const words = txt.split(/\s+/);
+        let line = '';
+        ctx.font = 'bold 12px system-ui, sans-serif';
+        for (const word of words) {
+          const candidate = line ? line + ' ' + word : word;
+          if (ctx.measureText(candidate).width > maxTextWidth - 20 && line) { lines.push(line); line = word; }
+          else line = candidate;
+        }
+        if (line) lines.push(line);
+        const bubbleW = maxTextWidth, lineH = 15, bubbleH = lines.length * lineH + 16, bubbleX = x - bubbleW / 2, bubbleY = 344 - bubbleH;
+        ctx.fillStyle = 'rgba(6, 40, 32, .96)'; rr(bubbleX, bubbleY, bubbleW, bubbleH, 9); ctx.fill();
+        ctx.strokeStyle = '#a7f3d0'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = 'rgba(6, 40, 32, .96)';
+        ctx.beginPath(); ctx.moveTo(x - 7, bubbleY + bubbleH - 1); ctx.lineTo(x + 7, bubbleY + bubbleH - 1); ctx.lineTo(x, bubbleY + bubbleH + 7); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ecfdf5'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        lines.forEach((lineText, i) => ctx.fillText(lineText, x, bubbleY + 9 + lineH * i + lineH / 2, bubbleW - 16));
+      }
     }
 
     platforms.forEach(p => {
-      ctx.fillStyle = p.g ? '#6b4a2b' : '#8a6238';
-      ctx.fillRect(p.x, p.y, p.w, p.h);
-      ctx.fillStyle = '#3f9d4f';
-      ctx.fillRect(p.x, p.y, p.w, p.g ? 10 : 6);
+      if (p.g) {
+        drawGroundSegment(p, t, dusk);
+      } else {
+        // Platform melayang memakai lapisan rumput/tanah Padang Ilmu atau pasir/batuan Lembah Hikmah.
+        drawGroundSegment({ x: p.x, y: p.y, w: p.w, h: 32 }, t, dusk);
+      }
     });
 
     for (const c of cps) {
@@ -1750,17 +2235,19 @@
     }
 
     for (const b of blocks) {
-      const done = b.state === 'done';
+      const used = b.state !== 'new';
       const y = b.y - (b.bump > 0 ? Math.sin((1 - b.bump) * Math.PI) * 8 : 0);
-      ctx.fillStyle = done ? '#a8a29e' : '#f59e0b';
+      ctx.fillStyle = used ? '#9ca3af' : '#f59e0b';
       ctx.fillRect(b.x, y, b.w, b.h);
-      ctx.strokeStyle = done ? '#78716c' : '#92400e';
+      ctx.strokeStyle = used ? '#6b7280' : '#92400e';
       ctx.lineWidth = 3;
       ctx.strokeRect(b.x + 1.5, y + 1.5, b.w - 3, b.h - 3);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 22px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(done ? '✓' : '?', b.x + b.w / 2, y + b.h / 2 + 1);
+      if (!used) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('?', b.x + b.w / 2, y + b.h / 2 + 1);
+      }
     }
 
     doors.forEach(d => drawDoor(d, t));
@@ -1782,7 +2269,20 @@
     }
 
     if (!player.hidden) {
-      drawPlayer(t, tele ? Math.max(0, 1 - tele.t) : (player.inv > 0 && Math.floor(t / 80) % 2 ? 0.35 : 1));
+      if (pitDeath) {
+        ctx.save();
+        const progress = Math.min(1, pitDeath.t / .9);
+        const cx = player.x + player.w / 2, cy = player.y + player.h / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate((pitDeath.type === 'spikes' ? 1 : -1) * progress * .28 + (pitDeath.type === 'fire' ? Math.sin(t / 22) * .08 : 0));
+        ctx.translate(-cx, -cy);
+        const blink = pitDeath.type === 'fire' && Math.floor(t / 65) % 2 === 0 ? .72 : 1;
+        drawPlayer(t, blink);
+        ctx.restore();
+        drawPitDeathOverlay(t);
+      } else {
+        drawPlayer(t, tele ? Math.max(0, 1 - tele.t) : (player.inv > 0 && Math.floor(t / 80) % 2 ? 0.35 : 1));
+      }
     }
     ctx.restore();
   }
@@ -1856,19 +2356,41 @@
     drawDoomsdayBackground(t);
 
     const dy = boss.dying, sh = boss.shake * 10 * Math.sin(t / 25);
-    // POSISI BOS DIDIKIT DINAIKKAN AGAR SEJARAJAH DENGAN PEMAIN DI ATAS
-    const bx = 620 + sh - boss.atk * 60, by = 180 + Math.sin(t / 400) * 10;
-    ctx.save();
-    ctx.globalAlpha = 1 - dy;
-    ctx.translate(bx, by);
-    ctx.scale(1 + dy * 0.5, 1 + dy * 0.5);
-    ctx.shadowColor = boss.hurt > 0 ? '#fde047' : '#ef4444';
-    ctx.shadowBlur = 30 + 20 * boss.hurt;
-    ctx.font = '130px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('👾', 0, 0);
-    ctx.restore();
+    const bx = 620 + sh - boss.atk * 60;
+    const baseY = 180 + Math.sin(t / 400) * 10;
+    const by = baseY + dy * 145;
+
+    // Gelombang ledakan melingkar berulang saat bos menerima serangan terakhir.
+    if (dy > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 4; i++) {
+        const phase = (dy * 2.7 + i * .23) % 1;
+        const radius = 12 + phase * (55 + i * 8);
+        ctx.globalAlpha = Math.max(0, 1 - phase) * (1 - dy * .45);
+        ctx.strokeStyle = ['#fff7ed', '#fde047', '#fb923c', '#ef4444'][i];
+        ctx.lineWidth = Math.max(1, 7 * (1 - phase));
+        ctx.beginPath(); ctx.arc(bx + Math.sin(t / 45 + i) * 13, baseY + Math.cos(t / 60 + i) * 9, radius, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Tubuh bos miring, jatuh ke bawah, mengecil, lalu memudar.
+    if (dy < 1) {
+      ctx.save();
+      ctx.globalAlpha = 1 - dy;
+      ctx.translate(bx, by);
+      ctx.rotate(dy * 1.25);
+      const scale = Math.max(.08, 1 - dy * .68);
+      ctx.scale(scale, scale);
+      ctx.shadowColor = boss.hurt > 0 || dy > .1 ? '#fde047' : '#ef4444';
+      ctx.shadowBlur = 30 + 30 * boss.hurt + 12 * dy;
+      ctx.font = '130px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('👾', 0, 0);
+      ctx.restore();
+    }
 
     if (laser) {
       const k = Math.min(1, laser.t / 0.15), x0 = player.x + player.w, y0 = player.y + 14, x1 = x0 + (bx - 60 - x0) * k;
